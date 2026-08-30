@@ -6,6 +6,8 @@ import { AUTH_ROUTES, withRedirectedFrom } from "@/lib/auth/routes";
 import { isAuthDebugEnabled } from "@/lib/auth/debug";
 import { safeRelativeNextPath } from "@/lib/auth/safe-next-path";
 import { createActionClient } from "@/lib/supabase/server-action";
+import { parseAuthMethod, prefillsAsEmail } from "@/lib/auth/sign-in-method";
+import { ensureUserProfileFromAuthUser } from "@/lib/users/ensure-profile";
 import { buildDynamicPageMetadata } from "@/lib/seo/dynamic-metadata";
 import SignInForm from "./sign-in-form";
 
@@ -32,7 +34,7 @@ function getAuthErrorMessage(
     errorCode === "exchange_failed" &&
     normalizedDescription.toLowerCase().includes("pkce code verifier not found")
   ) {
-    return "That email link cannot be completed in this browser session. Sign in with your password or enter a 6-digit email code on this page instead.";
+    return "Your email is confirmed. Sign in with the password you created.";
   }
   if (normalizedDescription.toLowerCase().includes("email rate limit exceeded")) {
     return "Too many email requests were sent. Wait about a minute, then request another code, or use Google/password sign-in.";
@@ -70,7 +72,7 @@ async function signInAction(
   const password = formData.get("password") as string;
   const otpRaw = (formData.get("otp") as string | null)?.trim() || "";
   const otp = otpRaw.replace(/\s|-/g, "");
-  const authMethod = (formData.get("authMethod") as string) || "otp";
+  const authMethod = (formData.get("authMethod") as string) || "password";
   const rawNext = formData.get("redirectedFrom") as string | null;
   const nextPath = safeRelativeNextPath(rawNext || undefined);
 
@@ -122,6 +124,11 @@ async function signInAction(
       };
     }
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    await ensureUserProfileFromAuthUser(user);
+
     redirect(nextPath);
   }
 
@@ -166,6 +173,11 @@ async function signInAction(
     return { error: error.message, authMethod: "password" as const };
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  await ensureUserProfileFromAuthUser(user);
+
   redirect(nextPath);
 }
 
@@ -176,6 +188,8 @@ type SignInPageProps = {
     error_description?: string;
     redirectedFrom?: string;
     signup?: string;
+    method?: string;
+    email?: string;
   }>;
 };
 
@@ -224,13 +238,23 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
             role="status"
           >
             <p className="text-sm text-green-900 dark:text-green-100">
-              Check your email for a confirmation link to activate your account. Open the link in
-              this same browser when you can. If the link does not log you in automatically, return
-              here and sign in with the password you just created (or request a 6-digit email code).
+              Your account is saved. Check your email for a confirmation link, then sign in here
+              with the password you just created. Open the confirmation link in this same browser
+              when you can.
             </p>
           </div>
         )}
-        {authErrorMessage && (
+        {sp.signup === "confirmed" && (
+          <div
+            className="rounded-md bg-green-50 dark:bg-green-900/20 p-4"
+            role="status"
+          >
+            <p className="text-sm text-green-900 dark:text-green-100">
+              Your email is confirmed. Sign in with the password you created.
+            </p>
+          </div>
+        )}
+        {authErrorMessage && sp.signup !== "confirmed" && (
           <div
             className="rounded-md bg-red-50 dark:bg-red-900/20 p-4"
             role="alert"
@@ -258,6 +282,8 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
         <SignInForm
           redirectedFrom={redirectedFrom}
           signInAction={signInAction}
+          initialAuthMethod={parseAuthMethod(sp.method)}
+          initialEmail={prefillsAsEmail(sp.email)}
         />
       </div>
     </div>

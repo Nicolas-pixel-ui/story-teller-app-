@@ -5,6 +5,7 @@ import { AUTH_ROUTES } from "@/lib/auth/routes";
 import { safeRelativeNextPath } from "@/lib/auth/safe-next-path";
 import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/config/env";
 import { getSupabaseCookieOptions } from "@/lib/supabase/cookie-options";
+import { ensureUserProfileFromAuthUser } from "@/lib/users/ensure-profile";
 import type { EmailOtpType } from "@supabase/supabase-js";
 
 const DEFAULT_NEXT = "/dashboard";
@@ -42,10 +43,13 @@ export async function GET(request: NextRequest) {
   const redirectSignInError = (
     error: string,
     errorCode?: string | null,
-    errorDescription?: string | null
+    errorDescription?: string | null,
+    extras?: { method?: string; signup?: string }
   ) => {
     const signInUrl = new URL(AUTH_ROUTES.SIGN_IN, url.origin);
     signInUrl.searchParams.set("error", error);
+    signInUrl.searchParams.set("method", extras?.method ?? "password");
+    if (extras?.signup) signInUrl.searchParams.set("signup", extras.signup);
     if (errorCode) signInUrl.searchParams.set("error_code", errorCode);
     if (errorDescription) signInUrl.searchParams.set("error_description", errorDescription);
     return NextResponse.redirect(signInUrl);
@@ -109,6 +113,17 @@ export async function GET(request: NextRequest) {
         setAuthDebugHeader(retryResponse, "exchange-restarted-oauth", true);
         return retryResponse;
       }
+      if (isPkceMissing && !isGoogleOAuth) {
+        const signInUrl = new URL(AUTH_ROUTES.SIGN_IN, url.origin);
+        signInUrl.searchParams.set("method", "password");
+        signInUrl.searchParams.set("signup", "confirmed");
+        const confirmedResponse = NextResponse.redirect(signInUrl);
+        setAuthDebugHeader(confirmedResponse, "callback-host", url.host);
+        setAuthDebugHeader(confirmedResponse, "exchange-error", true);
+        setAuthDebugHeader(confirmedResponse, "exchange-message", error.message);
+        setAuthDebugHeader(confirmedResponse, "password-recovery", true);
+        return confirmedResponse;
+      }
       const errorResponse = redirectSignInError("oauth", "exchange_failed", error.message);
       setAuthDebugHeader(errorResponse, "callback-host", url.host);
       setAuthDebugHeader(errorResponse, "exchange-error", true);
@@ -129,6 +144,11 @@ export async function GET(request: NextRequest) {
       return errorResponse;
     }
   }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  await ensureUserProfileFromAuthUser(user);
 
   const wroteSupabaseCookie = response.cookies
     .getAll()

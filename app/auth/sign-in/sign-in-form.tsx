@@ -2,6 +2,7 @@
 
 import { FormEvent, useActionState, useEffect, useMemo, useState } from "react";
 import { AUTH_ROUTES } from "@/lib/auth/routes";
+import { parseAuthMethod, type AuthMethod } from "@/lib/auth/sign-in-method";
 import { createClient } from "@/lib/supabase/client";
 
 type SignInState = {
@@ -31,13 +32,17 @@ function toFriendlyAuthError(message: string): string {
 export default function SignInForm({
   redirectedFrom,
   signInAction,
+  initialAuthMethod,
+  initialEmail,
 }: {
   redirectedFrom?: string;
   signInAction: SignInAction;
+  initialAuthMethod?: AuthMethod;
+  initialEmail?: string;
 }) {
   const [state, formAction, isPending] = useActionState(signInAction, null);
-  const [authMethod, setAuthMethod] = useState<"otp" | "magic" | "password">(
-    "otp"
+  const [authMethod, setAuthMethod] = useState<AuthMethod>(
+    parseAuthMethod(initialAuthMethod)
   );
   const [hashError, setHashError] = useState<string | null>(null);
   const [clientError, setClientError] = useState<string | null>(null);
@@ -45,7 +50,7 @@ export default function SignInForm({
   const [clientPending, setClientPending] = useState(false);
   const [otpSentLocal, setOtpSentLocal] = useState(false);
   const [resendCooldownSeconds, setResendCooldownSeconds] = useState(0);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(initialEmail ?? "");
   const [otp, setOtp] = useState("");
   const isOtp = authMethod === "otp";
   const isMagic = authMethod === "magic";
@@ -329,21 +334,35 @@ export default function SignInForm({
           Sign in with Google
         </a>
 
-        <button
-          type="button"
-          onClick={() => setAuthMethod(isPassword ? "otp" : "password")}
-          className="text-sm text-brand-ink/85 dark:text-brand-seafoam hover:underline"
-        >
-          {isPassword ? "Use email code instead" : "Sign in with password instead"}
-        </button>
+        {!isPassword ? (
+          <button
+            type="button"
+            onClick={() => setAuthMethod("password")}
+            className="text-sm text-brand-ink/85 dark:text-brand-seafoam hover:underline"
+          >
+            Sign in with password instead
+          </button>
+        ) : null}
 
-        <button
-          type="button"
-          onClick={() => setAuthMethod(isMagic ? "otp" : "magic")}
-          className="text-sm text-brand-ink/85 dark:text-brand-seafoam hover:underline"
-        >
-          {isMagic ? "Use email code instead" : "Use magic link instead"}
-        </button>
+        {!isOtp ? (
+          <button
+            type="button"
+            onClick={() => setAuthMethod("otp")}
+            className="text-sm text-brand-ink/85 dark:text-brand-seafoam hover:underline"
+          >
+            Use email code instead
+          </button>
+        ) : null}
+
+        {!isMagic ? (
+          <button
+            type="button"
+            onClick={() => setAuthMethod("magic")}
+            className="text-sm text-brand-ink/85 dark:text-brand-seafoam hover:underline"
+          >
+            Use magic link instead
+          </button>
+        ) : null}
       </div>
     </form>
   );

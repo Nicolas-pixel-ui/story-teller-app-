@@ -97,3 +97,33 @@ export async function ensureUserProfile(input: EnsureProfileInput): Promise<User
     () => ensureViaSupabase(input)
   );
 }
+
+type AuthUserForProfile = {
+  id: string;
+  email?: string | null;
+  user_metadata?: {
+    display_name?: unknown;
+  } | null;
+};
+
+/** Best-effort profile create after login. Never throws — login must still succeed. */
+export async function ensureUserProfileFromAuthUser(
+  user: AuthUserForProfile | null | undefined
+): Promise<void> {
+  if (!user?.id || !user.email?.trim()) {
+    return;
+  }
+
+  try {
+    await ensureUserProfile({
+      id: user.id,
+      email: user.email,
+      displayName:
+        typeof user.user_metadata?.display_name === "string"
+          ? user.user_metadata.display_name
+          : null,
+    });
+  } catch (error) {
+    console.error("[auth] Failed to ensure user profile after login", error);
+  }
+}

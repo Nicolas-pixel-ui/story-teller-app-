@@ -2,11 +2,12 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getAuthCallbackUrlForRequest } from "@/lib/auth/callback-url";
 import { getRequestUser } from "@/lib/auth/request-user";
-import { AUTH_ROUTES, withRedirectedFrom } from "@/lib/auth/routes";
+import { AUTH_ROUTES, withRedirectedFrom, isAuthRoute } from "@/lib/auth/routes";
 import { isAuthDebugEnabled } from "@/lib/auth/debug";
 import { safeRelativeNextPath } from "@/lib/auth/safe-next-path";
 import { formatPasswordAuthError } from "@/lib/auth/format-password-auth-error";
 import { createActionClient } from "@/lib/supabase/server-action";
+import { ensureUserProfileFromAuthUser } from "@/lib/users/ensure-profile";
 import { buildDynamicPageMetadata } from "@/lib/seo/dynamic-metadata";
 import SignUpForm from "./sign-up-form";
 
@@ -46,7 +47,7 @@ async function signUpAction(previousState: { error?: string } | null | void, for
   const callbackUrl = new URL(await getAuthCallbackUrlForRequest());
   callbackUrl.searchParams.set("next", nextPath);
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -58,11 +59,19 @@ async function signUpAction(previousState: { error?: string } | null | void, for
     return { error: formatPasswordAuthError(error) ?? error.message };
   }
 
-  const back = rawNext
-    ? withRedirectedFrom(AUTH_ROUTES.SIGN_IN, rawNext)
-    : AUTH_ROUTES.SIGN_IN;
-  const separator = back.includes("?") ? "&" : "?";
-  redirect(`${back}${separator}signup=confirm`);
+  if (data.session?.user) {
+    await ensureUserProfileFromAuthUser(data.session.user);
+    redirect(nextPath);
+  }
+
+  const signIn = new URL(AUTH_ROUTES.SIGN_IN, "http://local.invalid");
+  signIn.searchParams.set("signup", "confirm");
+  signIn.searchParams.set("method", "password");
+  signIn.searchParams.set("email", email.trim());
+  if (rawNext && !isAuthRoute(rawNext)) {
+    signIn.searchParams.set("redirectedFrom", rawNext);
+  }
+  redirect(`${signIn.pathname}${signIn.search}`);
 }
 
 type SignUpPageProps = {

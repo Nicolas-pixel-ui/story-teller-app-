@@ -76,41 +76,58 @@ export type SupabaseCookieContext = {
   host?: string;
 };
 
+/** Keep refresh-token cookies after the browser is closed (~400 days). */
+export const AUTH_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 400;
+
+function resolveRequestHost(context?: SupabaseCookieContext): string | undefined {
+  return (
+    context?.host ??
+    (typeof window !== "undefined" ? window.location.hostname : undefined)
+  );
+}
+
+function isHttpsContext(host?: string): boolean {
+  if (typeof window !== "undefined") {
+    return window.location.protocol === "https:";
+  }
+  if (!host) return process.env.NODE_ENV === "production";
+  return !isLocalOrPreviewHost(host);
+}
+
 /**
- * Returns Supabase SSR `cookieOptions` so session cookies work on both apex and www.
+ * Returns Supabase SSR `cookieOptions` so session cookies persist and work on both apex and www.
  *
  * Skips shared domain on localhost, Vercel preview hosts, or when `VERCEL_ENV` is not
  * `production` (server). In the browser, `host` defaults to `window.location.hostname`.
  */
 export function getSupabaseCookieOptions(
   context?: SupabaseCookieContext
-): CookieOptions | undefined {
+): CookieOptions {
+  const host = resolveRequestHost(context);
+  const skipSharedDomain =
+    Boolean(host && isLocalOrPreviewHost(host)) ||
+    (process.env.VERCEL === "1" &&
+      process.env.VERCEL_ENV !== "production" &&
+      (!host || !productionCookieDomainForHost(host)));
+
+  const base: CookieOptions = {
+    path: "/",
+    sameSite: "lax",
+    secure: isHttpsContext(host),
+    maxAge: AUTH_COOKIE_MAX_AGE_SECONDS,
+  };
+
+  if (skipSharedDomain) {
+    return base;
+  }
+
   const domain = resolveSharedDomain(context);
   if (!domain) {
-    return undefined;
-  }
-
-  const host =
-    context?.host ??
-    (typeof window !== "undefined" ? window.location.hostname : undefined);
-
-  if (host && isLocalOrPreviewHost(host)) {
-    return undefined;
-  }
-
-  if (process.env.VERCEL === "1" && process.env.VERCEL_ENV !== "production") {
-    // Still allow shared domain on the live production hostname during preview testing.
-    const host =
-      context?.host ??
-      (typeof window !== "undefined" ? window.location.hostname : undefined);
-    if (!host || !productionCookieDomainForHost(host)) {
-      return undefined;
-    }
+    return base;
   }
 
   return {
-    path: "/",
-    sameSite: "lax",
+    ...base,
     secure: true,
     domain,
   };

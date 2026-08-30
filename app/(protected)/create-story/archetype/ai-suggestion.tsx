@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { INSUFFICIENT_CREDITS_PATH, isInsufficientCreditsPayload } from "@/lib/credits/constants";
 import { getAIArchetypeSuggestion } from "./actions";
-import { Archetype } from "@/lib/data/archetypes";
 
 interface AIArchetypeSuggestionProps {
   context: {
@@ -30,8 +29,9 @@ export function AIArchetypeSuggestion({
     alternativeOptions: { archetypeId: string; reason: string }[];
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const hasAutoFetched = useRef(false);
 
-  const handleGetSuggestion = () => {
+  const handleGetSuggestion = useCallback(() => {
     setError(null);
     startTransition(async () => {
       try {
@@ -46,11 +46,21 @@ export function AIArchetypeSuggestion({
         }
         setSuggestion(result);
       } catch (err) {
-        setError("Failed to get AI suggestion. You can browse the grid instead.");
+        const message =
+          process.env.NODE_ENV === "development" && err instanceof Error
+            ? `Failed to get AI suggestion: ${err.message}`
+            : "Failed to get AI suggestion. You can browse the grid instead.";
+        setError(message);
         console.error(err);
       }
     });
-  };
+  }, [context, router]);
+
+  useEffect(() => {
+    if (hasAutoFetched.current) return;
+    hasAutoFetched.current = true;
+    handleGetSuggestion();
+  }, [handleGetSuggestion]);
 
   if (!suggestion && !isPending && !error) {
     return (
@@ -107,12 +117,20 @@ export function AIArchetypeSuggestion({
     return (
       <div className="flex flex-col items-center justify-center p-8 space-y-4 text-center bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-200 dark:border-red-900">
         <p className="text-red-600 dark:text-red-400 font-medium">{error}</p>
-        <button
-          onClick={onBrowseGrid}
-          className="px-6 py-2 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-medium rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800"
-        >
-          Browse Archetypes Manually
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={handleGetSuggestion}
+            className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+          >
+            Try Again
+          </button>
+          <button
+            onClick={onBrowseGrid}
+            className="px-6 py-2 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-medium rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+          >
+            Browse Archetypes Manually
+          </button>
+        </div>
       </div>
     );
   }

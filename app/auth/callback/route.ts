@@ -30,6 +30,8 @@ export async function GET(request: NextRequest) {
   const tokenHash = url.searchParams.get("token_hash");
   const otpType = url.searchParams.get("type");
   const oauthRetry = url.searchParams.get("oauthRetry") === "1";
+  const authProvider = url.searchParams.get("authProvider");
+  const isGoogleOAuth = authProvider === "google";
   const safeNext = safeRelativeNextPath(url.searchParams.get("next"));
   const destination = new URL(safeNext, url.origin);
 
@@ -95,7 +97,9 @@ export async function GET(request: NextRequest) {
     if (error) {
       const lower = error.message.toLowerCase();
       const isPkceMissing = lower.includes("pkce code verifier not found");
-      if (isPkceMissing && !oauthRetry) {
+      // Only restart Google OAuth for Google-started PKCE flows. Email
+      // confirmation / magic-link PKCE misses should send users to sign-in.
+      if (isPkceMissing && isGoogleOAuth && !oauthRetry) {
         const restartUrl = new URL(AUTH_ROUTES.GOOGLE, url.origin);
         restartUrl.searchParams.set("next", safeNext);
         restartUrl.searchParams.set("oauthRetry", "1");
@@ -109,6 +113,7 @@ export async function GET(request: NextRequest) {
       setAuthDebugHeader(errorResponse, "callback-host", url.host);
       setAuthDebugHeader(errorResponse, "exchange-error", true);
       setAuthDebugHeader(errorResponse, "exchange-message", error.message);
+      setAuthDebugHeader(errorResponse, "auth-provider", authProvider || "unknown");
       return errorResponse;
     }
   } else if (tokenHash && otpType && isEmailOtpType(otpType)) {

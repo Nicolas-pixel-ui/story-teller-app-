@@ -11,6 +11,9 @@ export async function GET(request: NextRequest) {
   const oauthRetry = url.searchParams.get("oauthRetry");
   const callbackUrl = new URL(AUTH_ROUTES.CALLBACK, url.origin);
   callbackUrl.searchParams.set("next", nextPath);
+  // Marks this PKCE exchange as Google so /auth/callback can retry OAuth
+  // without treating email confirmation failures as Google sign-in.
+  callbackUrl.searchParams.set("authProvider", "google");
   if (oauthRetry === "1") {
     callbackUrl.searchParams.set("oauthRetry", "1");
   }

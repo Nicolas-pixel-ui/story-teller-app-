@@ -32,7 +32,7 @@ function getAuthErrorMessage(
     errorCode === "exchange_failed" &&
     normalizedDescription.toLowerCase().includes("pkce code verifier not found")
   ) {
-    return "That email link cannot be completed in this browser session. Enter the 6-digit email code on this page instead, or request a new code.";
+    return "That email link cannot be completed in this browser session. Sign in with your password or enter a 6-digit email code on this page instead.";
   }
   if (normalizedDescription.toLowerCase().includes("email rate limit exceeded")) {
     return "Too many email requests were sent. Wait about a minute, then request another code, or use Google/password sign-in.";
@@ -224,9 +224,9 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
             role="status"
           >
             <p className="text-sm text-green-900 dark:text-green-100">
-              Check your email for a confirmation link to activate your account. After confirming,
-              return here to sign in. (Sign-up sends a link, not a 6-digit code — use email sign-in
-              below if you need a code instead.)
+              Check your email for a confirmation link to activate your account. Open the link in
+              this same browser when you can. If the link does not log you in automatically, return
+              here and sign in with the password you just created (or request a 6-digit email code).
             </p>
           </div>
         )}

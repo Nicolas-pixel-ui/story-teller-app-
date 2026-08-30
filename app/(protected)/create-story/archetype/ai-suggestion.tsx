@@ -28,10 +28,8 @@ export function AIArchetypeSuggestion({
     reasoning: string;
     alternativeOptions: { archetypeId: string; reason: string }[];
   } | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const fetchSuggestion = () => {
-    setError(null);
     startTransition(async () => {
       try {
         const requestId =
@@ -48,18 +46,19 @@ export function AIArchetypeSuggestion({
           typeof result !== "object" ||
           typeof (result as { primaryRecommendation?: unknown }).primaryRecommendation !== "string"
         ) {
-          setError("Could not load a suggestion. Please try again or browse the grid.");
+          // Soft fallback — never show a blocking red error.
+          onBrowseGrid();
           return;
         }
         setSuggestion(result);
       } catch (err) {
         console.error(err);
-        setError("Failed to get AI suggestion. You can browse the grid instead.");
+        onBrowseGrid();
       }
     });
   };
 
-  if (!suggestion && !isPending && !error) {
+  if (!suggestion && !isPending) {
     return (
       <div className="flex flex-col items-center justify-center p-8 space-y-6 text-center bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
         <div className="space-y-2">
@@ -112,28 +111,6 @@ export function AIArchetypeSuggestion({
         >
           Skip and browse archetypes
         </button>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 space-y-4 text-center bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-200 dark:border-red-900">
-        <p className="text-red-600 dark:text-red-400 font-medium">{error}</p>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <button
-            onClick={fetchSuggestion}
-            className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
-          >
-            Try Again
-          </button>
-          <button
-            onClick={onBrowseGrid}
-            className="px-6 py-2 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-medium rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800"
-          >
-            Browse Archetypes Manually
-          </button>
-        </div>
       </div>
     );
   }

@@ -50,7 +50,8 @@ export default function CreateStoryWizard({ styleGuides = [] }: CreateStoryWizar
 
   // Archetype State
   const [selectedArchetype, setSelectedArchetype] = useState<string | null>(null);
-  const [showArchetypeGrid, setShowArchetypeGrid] = useState(true);
+  // Start on AI suggestion; fall back to the grid if AI fails or the user skips.
+  const [showArchetypeGrid, setShowArchetypeGrid] = useState(false);
   const [archetypeSecondary, setArchetypeSecondary] = useState<string | null>(null);
   const [archetypeDarkSides, setArchetypeDarkSides] = useState<{ tooMuch: boolean; tooLittle: boolean }>({ tooMuch: false, tooLittle: false });
   const [archetypeJourney, setArchetypeJourney] = useState<{ start: string; middle: string; end: string }>({ start: "", middle: "", end: "" });

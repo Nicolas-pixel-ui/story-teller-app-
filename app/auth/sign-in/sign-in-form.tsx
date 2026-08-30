@@ -23,7 +23,7 @@ function toFriendlyAuthError(message: string): string {
     return "Too many email requests were sent. Wait about a minute, then request another code, or use Google/password sign-in now.";
   }
   if (lower.includes("pkce code verifier not found")) {
-    return "That email link cannot be completed in this browser session. Enter the 6-digit code on this page instead.";
+    return "That email link cannot be completed in this browser session. Sign in with your password or enter a 6-digit email code on this page instead.";
   }
   return normalized;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect, useCallback, useRef } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { INSUFFICIENT_CREDITS_PATH, isInsufficientCreditsPayload } from "@/lib/credits/constants";
 import { getAIArchetypeSuggestion } from "./actions";
@@ -30,8 +30,10 @@ export function AIArchetypeSuggestion({
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const hasAutoFetched = useRef(false);
+  const contextRef = useRef(context);
+  contextRef.current = context;
 
-  const handleGetSuggestion = useCallback(() => {
+  const fetchSuggestion = () => {
     setError(null);
     startTransition(async () => {
       try {
@@ -39,60 +41,37 @@ export function AIArchetypeSuggestion({
           typeof crypto !== "undefined" && "randomUUID" in crypto
             ? crypto.randomUUID()
             : undefined;
-        const result = await getAIArchetypeSuggestion(context, requestId);
+        const result = await getAIArchetypeSuggestion(contextRef.current, requestId);
         if (isInsufficientCreditsPayload(result)) {
           router.push(INSUFFICIENT_CREDITS_PATH);
           return;
         }
+        if (
+          !result ||
+          typeof result !== "object" ||
+          typeof (result as { primaryRecommendation?: unknown }).primaryRecommendation !== "string"
+        ) {
+          onBrowseGrid();
+          return;
+        }
         setSuggestion(result);
       } catch (err) {
-        const message =
-          process.env.NODE_ENV === "development" && err instanceof Error
-            ? `Failed to get AI suggestion: ${err.message}`
-            : "Failed to get AI suggestion. You can browse the grid instead.";
-        setError(message);
         console.error(err);
+        // Don't trap the user on an error screen — open the manual grid.
+        onBrowseGrid();
       }
     });
-  }, [context, router]);
+  };
 
   useEffect(() => {
     if (hasAutoFetched.current) return;
     hasAutoFetched.current = true;
-    handleGetSuggestion();
-  }, [handleGetSuggestion]);
+    fetchSuggestion();
+    // Intentionally run once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  if (!suggestion && !isPending && !error) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 space-y-6 text-center bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-        <div className="space-y-2">
-          <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-            Find Your Perfect Archetype
-          </h2>
-          <p className="text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
-            Let AI analyze your story context to recommend the best character archetype for your goals.
-          </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
-          <button
-            onClick={handleGetSuggestion}
-            className="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg shadow-purple-500/20 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
-          >
-            <span>✨</span> Get AI Suggestion
-          </button>
-          <button
-            onClick={onBrowseGrid}
-            className="flex-1 px-6 py-3 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium rounded-xl border border-zinc-200 dark:border-zinc-700 transition-colors"
-          >
-            Browse Grid
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (isPending) {
+  if (isPending || (!suggestion && !error)) {
     return (
       <div className="flex flex-col items-center justify-center p-12 space-y-6 text-center bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800">
         <div className="w-16 h-16 relative">
@@ -109,6 +88,12 @@ export function AIArchetypeSuggestion({
             <p>🔍 Finding the perfect archetype...</p>
           </div>
         </div>
+        <button
+          onClick={onBrowseGrid}
+          className="text-sm text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 underline"
+        >
+          Skip and browse archetypes
+        </button>
       </div>
     );
   }
@@ -119,7 +104,7 @@ export function AIArchetypeSuggestion({
         <p className="text-red-600 dark:text-red-400 font-medium">{error}</p>
         <div className="flex flex-col sm:flex-row gap-3">
           <button
-            onClick={handleGetSuggestion}
+            onClick={fetchSuggestion}
             className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
           >
             Try Again
@@ -135,18 +120,17 @@ export function AIArchetypeSuggestion({
     );
   }
 
-  // Display Suggestion Result
   return (
     <div className="space-y-8">
       <div className="bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800 rounded-2xl p-8 text-center">
         <div className="mb-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-sm font-medium">
           <span>✨</span> Top Recommendation ({suggestion?.confidence} confidence)
         </div>
-        
+
         <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 mb-4 capitalize">
           {suggestion?.primaryRecommendation.replace("-", " ")}
         </h2>
-        
+
         <p className="text-lg text-zinc-700 dark:text-zinc-300 max-w-2xl mx-auto mb-8">
           {suggestion?.reasoning}
         </p>
@@ -167,7 +151,6 @@ export function AIArchetypeSuggestion({
         </div>
       </div>
 
-      {/* Alternatives */}
       {suggestion?.alternativeOptions && suggestion.alternativeOptions.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100 pl-2">

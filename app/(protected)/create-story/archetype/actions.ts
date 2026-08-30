@@ -22,6 +22,58 @@ interface ArchetypeSuggestion {
   alternativeOptions: { archetypeId: string; reason: string }[];
 }
 
+const ARCHETYPE_MODEL_CANDIDATES = [
+  "gemini-3-flash-preview",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+] as const;
+
+function isRecoverableGeminiError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("503") ||
+    lower.includes("429") ||
+    lower.includes("high demand") ||
+    lower.includes("not found") ||
+    lower.includes("unsupported") ||
+    lower.includes("model")
+  );
+}
+
+async function generateArchetypeSuggestion(prompt: string): Promise<ArchetypeSuggestion> {
+  let lastError: unknown = null;
+
+  for (const modelName of ARCHETYPE_MODEL_CANDIDATES) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: { responseMimeType: "application/json" },
+      });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      const suggestion = JSON.parse(text) as ArchetypeSuggestion;
+
+      if (!archetypesLibrary[suggestion.primaryRecommendation]) {
+        suggestion.primaryRecommendation = "warrior";
+      }
+
+      return suggestion;
+    } catch (error) {
+      lastError = error;
+      if (!isRecoverableGeminiError(error)) {
+        throw error;
+      }
+      console.warn(`[archetype_suggest] Model ${modelName} failed, trying fallback:`, error);
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("No available Gemini model could generate an archetype suggestion.");
+}
+
 export async function getAIArchetypeSuggestion(
   context: StoryContext,
   requestId?: string
@@ -72,11 +124,6 @@ export async function getAIArchetypeSuggestion(
     }
 
     try {
-      const model = genAI.getGenerativeModel({
-        model: "gemini-3-flash-preview",
-        generationConfig: { responseMimeType: "application/json" },
-      });
-
       const archetypesList = Object.values(archetypesLibrary)
         .map((a) => `${a.id} (${a.name}): ${a.tagline}`)
         .join("\n");
@@ -104,17 +151,7 @@ export async function getAIArchetypeSuggestion(
       }
     `;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-
-      const suggestion = JSON.parse(text) as ArchetypeSuggestion;
-
-      if (!archetypesLibrary[suggestion.primaryRecommendation]) {
-        suggestion.primaryRecommendation = "warrior";
-      }
-
-      return suggestion;
+      return await generateArchetypeSuggestion(prompt);
     } catch (error) {
       console.error("Error getting archetype suggestion:", error);
       return fallbackSuggestion();

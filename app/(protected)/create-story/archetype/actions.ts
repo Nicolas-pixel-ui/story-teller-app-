@@ -26,40 +26,62 @@ export async function getAIArchetypeSuggestion(
   context: StoryContext,
   requestId?: string
 ): Promise<ArchetypeSuggestion | InsufficientCreditsResponse> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("Unauthorized");
-  }
-
-  const creditResult = await consumeCredit({
-    userId: user.id,
-    reason: "archetype_suggest",
-    requestId,
-    metadata: { storyType: context.storyType ?? null },
+  const fallbackSuggestion = (): ArchetypeSuggestion => ({
+    primaryRecommendation: "warrior",
+    confidence: "low",
+    reasoning:
+      "AI service is temporarily unavailable. Based on general storytelling principles, the Warrior archetype is a strong starting point for many protagonists.",
+    alternativeOptions: [
+      { archetypeId: "explorer", reason: "Good for journey-based stories" },
+      { archetypeId: "artist", reason: "Good for creative protagonists" },
+    ],
   });
-  const blocked = creditGate(creditResult);
-  if (blocked) return blocked;
-
-  if (!apiKey) {
-    // Fallback or error if no API key
-    console.warn("GEMINI_API_KEY not set for archetype suggestion");
-    // Return a mock suggestion to avoid breaking the UI in dev without keys
-    return {
-      primaryRecommendation: "warrior", // fallback
-      confidence: "low",
-      reasoning: "AI service unavailable (No API Key). Suggesting Warrior archetype as default.",
-      alternativeOptions: []
-    };
-  }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview", generationConfig: { responseMimeType: "application/json" } });
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    const archetypesList = Object.values(archetypesLibrary).map(a => `${a.id} (${a.name}): ${a.tagline}`).join("\n");
+    if (!user) {
+      return fallbackSuggestion();
+    }
 
-    const prompt = `
+    try {
+      const creditResult = await consumeCredit({
+        userId: user.id,
+        reason: "archetype_suggest",
+        requestId,
+        metadata: { storyType: context.storyType ?? null },
+      });
+      const blocked = creditGate(creditResult);
+      if (blocked) return blocked;
+    } catch (error) {
+      console.warn("[archetype_suggest] Credit debit failed, continuing without charge:", error);
+    }
+
+    if (!apiKey) {
+      console.warn("GEMINI_API_KEY not set for archetype suggestion");
+      return {
+        primaryRecommendation: "warrior",
+        confidence: "low",
+        reasoning:
+          "AI service unavailable (No API Key). Suggesting Warrior archetype as default.",
+        alternativeOptions: [],
+      };
+    }
+
+    try {
+      const model = genAI.getGenerativeModel({
+        model: "gemini-3-flash-preview",
+        generationConfig: { responseMimeType: "application/json" },
+      });
+
+      const archetypesList = Object.values(archetypesLibrary)
+        .map((a) => `${a.id} (${a.name}): ${a.tagline}`)
+        .join("\n");
+
+      const prompt = `
       You are an expert story analyst. Based on the following story concept, recommend the most suitable Character Archetype for the protagonist.
       
       Story Title: ${context.title}
@@ -82,31 +104,23 @@ export async function getAIArchetypeSuggestion(
       }
     `;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-    
-    const suggestion = JSON.parse(text);
-    
-    // Validate IDs
-    if (!archetypesLibrary[suggestion.primaryRecommendation]) {
-      // If AI returns invalid ID, fallback to first match or generic
-      suggestion.primaryRecommendation = "warrior"; 
-    }
-    
-    return suggestion;
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
 
+      const suggestion = JSON.parse(text) as ArchetypeSuggestion;
+
+      if (!archetypesLibrary[suggestion.primaryRecommendation]) {
+        suggestion.primaryRecommendation = "warrior";
+      }
+
+      return suggestion;
+    } catch (error) {
+      console.error("Error getting archetype suggestion:", error);
+      return fallbackSuggestion();
+    }
   } catch (error) {
-    console.error("Error getting archetype suggestion:", error);
-    // Return a safe fallback instead of crashing
-    return {
-      primaryRecommendation: "warrior", // Valid fallback ID
-      confidence: "low",
-      reasoning: "AI service is temporarily unavailable. Based on general storytelling principles, the Warrior archetype is a strong starting point for many protagonists.",
-      alternativeOptions: [
-        { archetypeId: "explorer", reason: "Good for journey-based stories" },
-        { archetypeId: "artist", reason: "Good for creative protagonists" }
-      ]
-    };
+    console.error("Unexpected error in getAIArchetypeSuggestion:", error);
+    return fallbackSuggestion();
   }
 }

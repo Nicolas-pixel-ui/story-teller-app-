@@ -4,10 +4,10 @@ import { creditTransactions, userCredits } from "@/lib/db/schema";
 import {
   adminGrantCreditsViaSupabase,
   adminResetCreditsToDailyQuotaViaSupabase,
+  getSupabaseClientForUserData,
   getUserCreditBalanceViaSupabase,
   isDirectPostgresConnectionError,
 } from "@/lib/db/supabase-fallback";
-import { shouldPreferSupabaseOverPostgres } from "@/lib/db/pooling-url-health";
 
 /** Daily AI generation allowance (stored in `monthly_free_quota` column for v1 schema). */
 export const DAILY_FREE_QUOTA = 140;
@@ -93,10 +93,6 @@ async function applyDailyRefill(tx: Parameters<Parameters<typeof db.transaction>
 }
 
 export async function getUserCreditBalance(userId: string): Promise<number> {
-  if (shouldPreferSupabaseOverPostgres()) {
-    return getUserCreditBalanceViaSupabase(userId);
-  }
-
   try {
     await ensureCreditRow({ userId });
 
@@ -117,79 +113,133 @@ export async function getUserCreditBalance(userId: string): Promise<number> {
   }
 }
 
-export async function consumeCredit(input: ConsumeCreditInput): Promise<ConsumeCreditResult> {
+type ConsumeCreditRpcResult = {
+  ok: boolean;
+  code?: string;
+  message?: string;
+  balance?: number;
+  already_consumed?: boolean;
+};
+
+async function consumeCreditViaPostgres(input: ConsumeCreditInput): Promise<ConsumeCreditResult> {
   const { userId, reason, requestId, metadata } = input;
   await ensureCreditRow({ userId });
 
-  try {
-    return await db.transaction(async (tx) => {
-      await applyDailyRefill(tx, userId);
+  return await db.transaction(async (tx) => {
+    await applyDailyRefill(tx, userId);
 
-      if (requestId) {
-        const [existing] = await tx
-          .select({ id: creditTransactions.id })
-          .from(creditTransactions)
-          .where(
-            and(
-              eq(creditTransactions.userId, userId),
-              eq(creditTransactions.requestId, requestId),
-              eq(creditTransactions.type, "debit")
-            )
-          )
-          .limit(1);
-
-        if (existing) {
-          const [balanceRow] = await tx
-            .select({ balance: userCredits.balance })
-            .from(userCredits)
-            .where(eq(userCredits.userId, userId))
-            .limit(1);
-          return { ok: true, balance: balanceRow?.balance ?? 0, alreadyConsumed: true };
-        }
-      }
-
-      const [debitResult] = await tx
-        .update(userCredits)
-        .set({
-          balance: sql`${userCredits.balance} - ${CREDITS_PER_AI_USE}`,
-          monthlyUsed: sql`${userCredits.monthlyUsed} + ${CREDITS_PER_AI_USE}`,
-          updatedAt: new Date(),
-        })
+    if (requestId) {
+      const [existing] = await tx
+        .select({ id: creditTransactions.id })
+        .from(creditTransactions)
         .where(
-          and(eq(userCredits.userId, userId), sql`${userCredits.balance} >= ${CREDITS_PER_AI_USE}`)
+          and(
+            eq(creditTransactions.userId, userId),
+            eq(creditTransactions.requestId, requestId),
+            eq(creditTransactions.type, "debit")
+          )
         )
-        .returning({ balance: userCredits.balance });
+        .limit(1);
 
-      if (!debitResult) {
+      if (existing) {
         const [balanceRow] = await tx
           .select({ balance: userCredits.balance })
           .from(userCredits)
           .where(eq(userCredits.userId, userId))
           .limit(1);
-        return {
-          ok: false,
-          code: INSUFFICIENT_CREDITS_CODE,
-          message: INSUFFICIENT_CREDITS_MESSAGE,
-          balance: balanceRow?.balance ?? 0,
-        };
+        return { ok: true, balance: balanceRow?.balance ?? 0, alreadyConsumed: true };
       }
+    }
 
-      await tx.insert(creditTransactions).values({
-        userId,
-        type: "debit",
-        amount: -CREDITS_PER_AI_USE,
-        reason,
-        requestId: requestId ?? null,
-        metadata: metadata ?? {},
-      });
+    const [debitResult] = await tx
+      .update(userCredits)
+      .set({
+        balance: sql`${userCredits.balance} - ${CREDITS_PER_AI_USE}`,
+        monthlyUsed: sql`${userCredits.monthlyUsed} + ${CREDITS_PER_AI_USE}`,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(eq(userCredits.userId, userId), sql`${userCredits.balance} >= ${CREDITS_PER_AI_USE}`)
+      )
+      .returning({ balance: userCredits.balance });
 
-      return { ok: true, balance: debitResult.balance };
+    if (!debitResult) {
+      const [balanceRow] = await tx
+        .select({ balance: userCredits.balance })
+        .from(userCredits)
+        .where(eq(userCredits.userId, userId))
+        .limit(1);
+      return {
+        ok: false,
+        code: INSUFFICIENT_CREDITS_CODE,
+        message: INSUFFICIENT_CREDITS_MESSAGE,
+        balance: balanceRow?.balance ?? 0,
+      };
+    }
+
+    await tx.insert(creditTransactions).values({
+      userId,
+      type: "debit",
+      amount: -CREDITS_PER_AI_USE,
+      reason,
+      requestId: requestId ?? null,
+      metadata: metadata ?? {},
     });
+
+    return { ok: true, balance: debitResult.balance };
+  });
+}
+
+async function consumeCreditViaSupabase(input: ConsumeCreditInput): Promise<ConsumeCreditResult> {
+  const { userId, reason, requestId, metadata } = input;
+  const supabase = await getSupabaseClientForUserData(userId);
+  const { data, error } = await supabase.rpc("consume_user_credit", {
+    p_reason: reason,
+    p_request_id: requestId ?? null,
+    p_metadata: metadata ?? {},
+    p_amount: CREDITS_PER_AI_USE,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  const payload = data as ConsumeCreditRpcResult | null;
+  if (!payload?.ok) {
+    if (payload?.code === "INSUFFICIENT_CREDITS") {
+      return {
+        ok: false,
+        code: INSUFFICIENT_CREDITS_CODE,
+        message: payload.message ?? INSUFFICIENT_CREDITS_MESSAGE,
+        balance: payload.balance ?? 0,
+      };
+    }
+
+    throw new Error(payload?.message ?? "Failed to consume credit via Supabase");
+  }
+
+  return {
+    ok: true,
+    balance: payload.balance ?? 0,
+    ...(payload.already_consumed ? { alreadyConsumed: true } : {}),
+  };
+}
+
+export async function consumeCredit(input: ConsumeCreditInput): Promise<ConsumeCreditResult> {
+  const { userId, requestId } = input;
+
+  try {
+    return await consumeCreditViaPostgres(input);
   } catch (error) {
     if (requestId && error instanceof Error && /credit_transactions_request_id_unique/i.test(error.message)) {
       const balance = await getUserCreditBalance(userId);
       return { ok: true, balance, alreadyConsumed: true };
     }
+
+    if (isDirectPostgresConnectionError(error)) {
+      return consumeCreditViaSupabase(input);
+    }
+
     throw error;
   }
 }
@@ -203,13 +253,9 @@ export async function adminGrantCredits(
     throw new Error("Credit grant amount must be a positive integer");
   }
 
-  if (shouldPreferSupabaseOverPostgres()) {
-    return adminGrantCreditsViaSupabase(userId, amount, reason);
-  }
-
-  await ensureCreditRow({ userId });
-
   try {
+    await ensureCreditRow({ userId });
+
     return await db.transaction(async (tx) => {
       await applyDailyRefill(tx, userId);
 
@@ -245,14 +291,11 @@ export async function adminResetCreditsToDailyQuota(
   userId: string,
   reason = "admin_reset_daily_quota"
 ): Promise<number> {
-  if (shouldPreferSupabaseOverPostgres()) {
-    return adminResetCreditsToDailyQuotaViaSupabase(userId, reason);
-  }
-
-  await ensureCreditRow({ userId });
   const dayStart = startOfCurrentUtcDay();
 
   try {
+    await ensureCreditRow({ userId });
+
     return await db.transaction(async (tx) => {
       const [updated] = await tx
         .update(userCredits)

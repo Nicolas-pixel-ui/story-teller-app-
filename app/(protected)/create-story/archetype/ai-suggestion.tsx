@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { INSUFFICIENT_CREDITS_PATH, isInsufficientCreditsPayload } from "@/lib/credits/constants";
 import { getAIArchetypeSuggestion } from "./actions";
@@ -22,6 +22,7 @@ export function AIArchetypeSuggestion({
 }: AIArchetypeSuggestionProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [autoLoad, setAutoLoad] = useState(true);
   const [suggestion, setSuggestion] = useState<{
     primaryRecommendation: string;
     confidence: "high" | "medium" | "low";
@@ -46,7 +47,6 @@ export function AIArchetypeSuggestion({
           typeof result !== "object" ||
           typeof (result as { primaryRecommendation?: unknown }).primaryRecommendation !== "string"
         ) {
-          // Soft fallback — never show a blocking red error.
           onBrowseGrid();
           return;
         }
@@ -54,41 +54,19 @@ export function AIArchetypeSuggestion({
       } catch (err) {
         console.error(err);
         onBrowseGrid();
+      } finally {
+        setAutoLoad(false);
       }
     });
   };
 
-  if (!suggestion && !isPending) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 space-y-6 text-center bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-        <div className="space-y-2">
-          <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-            Find Your Perfect Archetype
-          </h2>
-          <p className="text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
-            Let AI analyze your story context to recommend the best character archetype for your goals.
-          </p>
-        </div>
+  useEffect(() => {
+    fetchSuggestion();
+    // Fetch once when this panel opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
-          <button
-            onClick={fetchSuggestion}
-            className="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg shadow-purple-500/20 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
-          >
-            <span>✨</span> Get AI Suggestion
-          </button>
-          <button
-            onClick={onBrowseGrid}
-            className="flex-1 px-6 py-3 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium rounded-xl border border-zinc-200 dark:border-zinc-700 transition-colors"
-          >
-            Browse Grid
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (isPending) {
+  if (isPending || autoLoad) {
     return (
       <div className="flex flex-col items-center justify-center p-12 space-y-6 text-center bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800">
         <div className="w-16 h-16 relative">
@@ -110,6 +88,20 @@ export function AIArchetypeSuggestion({
           className="text-sm text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 underline"
         >
           Skip and browse archetypes
+        </button>
+      </div>
+    );
+  }
+
+  if (!suggestion) {
+    return (
+      <div className="flex justify-center p-8">
+        <button
+          type="button"
+          onClick={onBrowseGrid}
+          className="px-6 py-2 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 font-medium rounded-lg border border-zinc-200 dark:border-zinc-700"
+        >
+          Browse archetypes
         </button>
       </div>
     );

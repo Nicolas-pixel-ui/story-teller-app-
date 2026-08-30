@@ -22,40 +22,12 @@ interface ArchetypeSuggestion {
   alternativeOptions: { archetypeId: string; reason: string }[];
 }
 
-/**
- * Prefer models that currently succeed for this API key.
- * Avoid leading with GEMINI_SCENE_MODEL (often gemini-1.5-pro) — those 404 and burn
- * serverless time before a working model is tried.
- */
 const ARCHETYPE_MODEL_CANDIDATES = [
-  process.env.GEMINI_ARCHETYPE_MODEL,
-  "gemini-3.5-flash-lite",
-  "gemini-flash-lite-latest",
-  "gemini-3-flash-preview",
-  "gemini-3.5-flash",
-  "gemini-3.1-flash-lite",
-  "gemini-2.5-flash-lite",
-].filter((name, index, all): name is string => Boolean(name) && all.indexOf(name) === index);
-
-function isRecoverableGeminiError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error);
-  const lower = message.toLowerCase();
-  return (
-    lower.includes("503") ||
-    lower.includes("429") ||
-    lower.includes("404") ||
-    lower.includes("high demand") ||
-    lower.includes("not found") ||
-    lower.includes("unsupported") ||
-    lower.includes("unavailable") ||
-    lower.includes("overloaded") ||
-    lower.includes("timed out") ||
-    lower.includes("timeout") ||
-    lower.includes("model") ||
-    lower.includes("json") ||
-    lower.includes("unexpected")
-  );
-}
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+  "gemini-flash-latest",
+];
 
 function resolveArchetypeId(value: unknown): string | null {
   if (typeof value !== "string" || !value.trim()) return null;
@@ -166,7 +138,12 @@ async function generateArchetypeSuggestion(
   prompt: string,
   context: StoryContext
 ): Promise<ArchetypeSuggestion> {
+  const deadline = Date.now() + 8000;
+
   for (const modelName of ARCHETYPE_MODEL_CANDIDATES) {
+    const remaining = deadline - Date.now();
+    if (remaining < 1200) break;
+
     try {
       const model = genAI.getGenerativeModel({
         model: modelName,
@@ -174,7 +151,7 @@ async function generateArchetypeSuggestion(
       });
       const result = await withTimeout(
         model.generateContent(prompt),
-        12000,
+        Math.min(remaining, 6000),
         `Model ${modelName}`
       );
       const parsed = parseSuggestionText(result.response.text(), context);
@@ -185,10 +162,6 @@ async function generateArchetypeSuggestion(
       console.warn(`[archetype_suggest] Model ${modelName} returned an unusable suggestion payload`);
     } catch (error) {
       console.warn(`[archetype_suggest] Model ${modelName} failed, trying fallback:`, error);
-      if (!isRecoverableGeminiError(error)) {
-        // Still try other models; never abort the whole suggestion flow.
-        continue;
-      }
     }
   }
 

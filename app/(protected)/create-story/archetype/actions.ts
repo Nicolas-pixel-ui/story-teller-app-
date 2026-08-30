@@ -24,8 +24,8 @@ interface ArchetypeSuggestion {
 
 const ARCHETYPE_MODEL_CANDIDATES = [
   "gemini-3-flash-preview",
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
+  "gemini-flash-latest",
+  "gemini-2.5-flash",
 ] as const;
 
 function isRecoverableGeminiError(error: unknown): boolean {

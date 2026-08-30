@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect, useRef } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { INSUFFICIENT_CREDITS_PATH, isInsufficientCreditsPayload } from "@/lib/credits/constants";
 import { getAIArchetypeSuggestion } from "./actions";
@@ -29,9 +29,6 @@ export function AIArchetypeSuggestion({
     alternativeOptions: { archetypeId: string; reason: string }[];
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const hasAutoFetched = useRef(false);
-  const contextRef = useRef(context);
-  contextRef.current = context;
 
   const fetchSuggestion = () => {
     setError(null);
@@ -41,7 +38,7 @@ export function AIArchetypeSuggestion({
           typeof crypto !== "undefined" && "randomUUID" in crypto
             ? crypto.randomUUID()
             : undefined;
-        const result = await getAIArchetypeSuggestion(contextRef.current, requestId);
+        const result = await getAIArchetypeSuggestion(context, requestId);
         if (isInsufficientCreditsPayload(result)) {
           router.push(INSUFFICIENT_CREDITS_PATH);
           return;
@@ -51,27 +48,48 @@ export function AIArchetypeSuggestion({
           typeof result !== "object" ||
           typeof (result as { primaryRecommendation?: unknown }).primaryRecommendation !== "string"
         ) {
-          onBrowseGrid();
+          setError("Could not load a suggestion. Please try again or browse the grid.");
           return;
         }
         setSuggestion(result);
       } catch (err) {
         console.error(err);
-        // Don't trap the user on an error screen — open the manual grid.
-        onBrowseGrid();
+        setError("Failed to get AI suggestion. You can browse the grid instead.");
       }
     });
   };
 
-  useEffect(() => {
-    if (hasAutoFetched.current) return;
-    hasAutoFetched.current = true;
-    fetchSuggestion();
-    // Intentionally run once on mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  if (!suggestion && !isPending && !error) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 space-y-6 text-center bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+            Find Your Perfect Archetype
+          </h2>
+          <p className="text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
+            Let AI analyze your story context to recommend the best character archetype for your goals.
+          </p>
+        </div>
 
-  if (isPending || (!suggestion && !error)) {
+        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+          <button
+            onClick={fetchSuggestion}
+            className="flex-1 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg shadow-purple-500/20 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+          >
+            <span>✨</span> Get AI Suggestion
+          </button>
+          <button
+            onClick={onBrowseGrid}
+            className="flex-1 px-6 py-3 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium rounded-xl border border-zinc-200 dark:border-zinc-700 transition-colors"
+          >
+            Browse Grid
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isPending) {
     return (
       <div className="flex flex-col items-center justify-center p-12 space-y-6 text-center bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800">
         <div className="w-16 h-16 relative">

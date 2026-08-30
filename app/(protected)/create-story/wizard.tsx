@@ -14,6 +14,7 @@ import { ComplexitySelection } from "./moral-conflict/complexity-selection";
 import { PositionDefinition } from "./moral-conflict/position-definition";
 import { MoralConflictID, MoralComplexity } from "@/lib/data/moralConflicts";
 import { ArchetypeGrid } from "./archetype/archetype-grid";
+import { AIArchetypeSuggestion } from "./archetype/ai-suggestion";
 import { CombinationSelector } from "./archetype/combination-selector";
 import { DarkSidesExplorer } from "./archetype/dark-sides-explorer";
 import { JourneyMapper } from "./archetype/journey-mapper";
@@ -49,6 +50,7 @@ export default function CreateStoryWizard({ styleGuides = [] }: CreateStoryWizar
 
   // Archetype State
   const [selectedArchetype, setSelectedArchetype] = useState<string | null>(null);
+  const [showArchetypeGrid, setShowArchetypeGrid] = useState(true);
   const [archetypeSecondary, setArchetypeSecondary] = useState<string | null>(null);
   const [archetypeDarkSides, setArchetypeDarkSides] = useState<{ tooMuch: boolean; tooLittle: boolean }>({ tooMuch: false, tooLittle: false });
   const [archetypeJourney, setArchetypeJourney] = useState<{ start: string; middle: string; end: string }>({ start: "", middle: "", end: "" });
@@ -209,10 +211,30 @@ export default function CreateStoryWizard({ styleGuides = [] }: CreateStoryWizar
             </h2>
           </div>
           
-          <ArchetypeGrid 
-            onSelect={handleArchetypeSelect}
-            selectedId={selectedArchetype}
-          />
+          {!showArchetypeGrid && selectedType ? (
+            <AIArchetypeSuggestion
+              context={{
+                title: "New Story",
+                description: "",
+                storyType: selectedType.name,
+              }}
+              onSelect={handleArchetypeSelect}
+              onBrowseGrid={() => setShowArchetypeGrid(true)}
+            />
+          ) : (
+            <div className="space-y-4">
+              <button
+                onClick={() => setShowArchetypeGrid(false)}
+                className="text-sm text-brand-teal dark:text-brand-yellow hover:underline"
+              >
+                ✨ Get an AI suggestion
+              </button>
+              <ArchetypeGrid
+                onSelect={handleArchetypeSelect}
+                selectedId={selectedArchetype}
+              />
+            </div>
+          )}
         </div>
       )}
 

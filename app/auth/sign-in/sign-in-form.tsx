@@ -4,6 +4,7 @@ import { FormEvent, useActionState, useEffect, useMemo, useState } from "react";
 import { AUTH_ROUTES } from "@/lib/auth/routes";
 import { parseAuthMethod, type AuthMethod } from "@/lib/auth/sign-in-method";
 import { createClient } from "@/lib/supabase/client";
+import { authFieldClassName } from "@/lib/ui/form-classes";
 
 type SignInState = {
   error?: string;
@@ -226,7 +227,7 @@ export default function SignInForm({
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="mt-1 block w-full rounded-md border border-brand-seafoam/60 dark:border-brand-seafoam/40 bg-white dark:bg-brand-ink/70 px-3 py-2 text-brand-ink dark:text-brand-seafoam placeholder-brand-ink/55 dark:placeholder-brand-seafoam/50 focus:border-brand-teal dark:focus:border-brand-yellow focus:outline-none focus:ring-1 focus:ring-brand-teal dark:focus:ring-brand-yellow"
+            className={authFieldClassName}
             placeholder="you@example.com"
           />
         </div>
@@ -248,7 +249,7 @@ export default function SignInForm({
               required={false}
               value={otp}
               onChange={(event) => setOtp(event.target.value)}
-              className="mt-1 block w-full rounded-md border border-brand-seafoam/60 dark:border-brand-seafoam/40 bg-white dark:bg-brand-ink/70 px-3 py-2 text-brand-ink dark:text-brand-seafoam placeholder-brand-ink/55 dark:placeholder-brand-seafoam/50 focus:border-brand-teal dark:focus:border-brand-yellow focus:outline-none focus:ring-1 focus:ring-brand-teal dark:focus:ring-brand-yellow"
+              className={authFieldClassName}
               placeholder="Enter code when you have it (optional)"
             />
           </div>
@@ -268,7 +269,7 @@ export default function SignInForm({
               type="password"
               autoComplete="current-password"
               required={isPassword}
-              className="mt-1 block w-full rounded-md border border-brand-seafoam/60 dark:border-brand-seafoam/40 bg-white dark:bg-brand-ink/70 px-3 py-2 text-brand-ink dark:text-brand-seafoam placeholder-brand-ink/55 dark:placeholder-brand-seafoam/50 focus:border-brand-teal dark:focus:border-brand-yellow focus:outline-none focus:ring-1 focus:ring-brand-teal dark:focus:ring-brand-yellow"
+              className={authFieldClassName}
               placeholder="••••••••"
             />
           </div>
@@ -285,7 +286,7 @@ export default function SignInForm({
         <button
           type="submit"
           disabled={isPending || clientPending}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-ink dark:bg-brand-yellow dark:text-brand-ink hover:bg-brand-teal dark:hover:bg-brand-seafoam focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-teal dark:focus:ring-brand-yellow disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-brand-cream bg-brand-ink dark:bg-brand-yellow dark:text-brand-ink hover:bg-brand-teal dark:hover:bg-brand-seafoam focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-teal dark:focus:ring-brand-yellow disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {(isPending || clientPending)
             ? "Processing..."
@@ -305,13 +306,13 @@ export default function SignInForm({
             <div className="w-full border-t border-brand-seafoam/40 dark:border-brand-seafoam/30" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-white dark:bg-brand-ink px-2 text-brand-ink/80 dark:text-brand-seafoam">Or continue with</span>
+            <span className="bg-brand-cream px-2 text-brand-ink">Or continue with</span>
           </div>
         </div>
 
         <a
           href={`${AUTH_ROUTES.GOOGLE}?next=${encodeURIComponent(redirectedFrom || "/dashboard")}`}
-          className="w-full flex items-center justify-center gap-2 py-2 px-4 border border-brand-seafoam/50 dark:border-brand-seafoam/30 rounded-md shadow-sm text-sm font-medium text-brand-ink dark:text-brand-seafoam bg-white dark:bg-brand-ink/70 hover:bg-brand-cream dark:hover:bg-brand-seafoam/15 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-teal"
+          className="w-full flex items-center justify-center gap-2 py-2 px-4 border border-brand-seafoam/50 rounded-md shadow-sm text-sm font-medium text-brand-ink bg-white hover:bg-brand-cream focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-teal"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path

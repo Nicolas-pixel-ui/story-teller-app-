@@ -95,6 +95,29 @@
     --background: #1d2e3f;
     --foreground: #faf7ef;
   }
+
+  /* Light form fields keep dark text in dark mode (bg-white remaps to cream). */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+  textarea,
+  select {
+    color: var(--brand-ink) !important;
+    caret-color: var(--brand-ink);
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"])::placeholder,
+  textarea::placeholder {
+    color: color-mix(in srgb, var(--brand-ink) 55%, transparent) !important;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):-webkit-autofill,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):-webkit-autofill:hover,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--brand-ink) !important;
+    box-shadow: 0 0 0 1000px var(--brand-seafoam) inset !important;
+  }
 }
 
 body {
@@ -303,4 +326,37 @@ a {
 }
 .dark [class~="dark:hover:text-zinc-300"]:hover {
   color: var(--brand-orange) !important;
+}
+
+/*
+ * Dark mode contrast: white/zinc remaps to cream, so cream-on-cream hides labels.
+ * Only retarget fills that actually stay cream (bg-white !important, or dark: cream buttons).
+ * Do not target bg-brand-seafoam — that class is also on dark page shells.
+ */
+@media (prefers-color-scheme: dark) {
+  .bg-white,
+  .bg-white *,
+  .bg-zinc-50,
+  .bg-zinc-50 *,
+  .bg-zinc-100,
+  .bg-zinc-100 *,
+  .bg-zinc-200,
+  .bg-zinc-200 * {
+    color: var(--brand-ink) !important;
+  }
+
+  [class~="dark:bg-brand-yellow"],
+  [class~="dark:bg-brand-yellow"] *,
+  [class~="dark:bg-brand-seafoam"],
+  [class~="dark:bg-brand-seafoam"] *,
+  [class~="dark:bg-brand-cream"],
+  [class~="dark:bg-brand-cream"] *,
+  [class~="dark:bg-white"],
+  [class~="dark:bg-white"] *,
+  [class~="dark:bg-zinc-50"],
+  [class~="dark:bg-zinc-50"] *,
+  [class~="dark:bg-zinc-100"],
+  [class~="dark:bg-zinc-100"] * {
+    color: var(--brand-ink) !important;
+  }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { authFieldClassName } from "@/lib/ui/form-classes";
 
 type SignUpAction = (previousState: { error?: string } | null | void, formData: FormData) => Promise<{ error?: string } | void | null>;
 
@@ -36,7 +37,7 @@ export default function SignUpForm({
             type="email"
             autoComplete="email"
             required
-            className="mt-1 block w-full rounded-md border border-brand-seafoam/60 dark:border-brand-seafoam/40 bg-white dark:bg-brand-ink/70 px-3 py-2 text-brand-ink dark:text-brand-seafoam placeholder-brand-ink/55 dark:placeholder-brand-seafoam/50 focus:border-brand-teal dark:focus:border-brand-yellow focus:outline-none focus:ring-1 focus:ring-brand-teal dark:focus:ring-brand-yellow"
+            className={authFieldClassName}
             placeholder="you@example.com"
           />
         </div>
@@ -54,7 +55,7 @@ export default function SignUpForm({
             type="password"
             autoComplete="new-password"
             required
-            className="mt-1 block w-full rounded-md border border-brand-seafoam/60 dark:border-brand-seafoam/40 bg-white dark:bg-brand-ink/70 px-3 py-2 text-brand-ink dark:text-brand-seafoam placeholder-brand-ink/55 dark:placeholder-brand-seafoam/50 focus:border-brand-teal dark:focus:border-brand-yellow focus:outline-none focus:ring-1 focus:ring-brand-teal dark:focus:ring-brand-yellow"
+            className={authFieldClassName}
             placeholder="••••••••"
             minLength={8}
           />
@@ -70,7 +71,7 @@ export default function SignUpForm({
         <button
           type="submit"
           disabled={isPending}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-ink dark:bg-brand-yellow dark:text-brand-ink hover:bg-brand-teal dark:hover:bg-brand-seafoam focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-teal disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-brand-cream bg-brand-ink dark:bg-brand-yellow dark:text-brand-ink hover:bg-brand-teal dark:hover:bg-brand-seafoam focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-teal disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending ? "Creating account..." : "Sign up"}
         </button>

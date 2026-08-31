@@ -5,6 +5,7 @@ import { AUTH_ROUTES } from "@/lib/auth/routes";
 import { parseAuthMethod, type AuthMethod } from "@/lib/auth/sign-in-method";
 import { createClient } from "@/lib/supabase/client";
 import { authFieldClassName } from "@/lib/ui/form-classes";
+import { brandPrimaryButtonClassName } from "@/lib/ui/button-classes";
 
 type SignInState = {
   error?: string;
@@ -286,7 +287,7 @@ export default function SignInForm({
         <button
           type="submit"
           disabled={isPending || clientPending}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-brand-cream bg-brand-ink dark:bg-brand-yellow dark:!text-brand-ink hover:bg-brand-teal dark:hover:bg-brand-seafoam focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-teal dark:focus:ring-brand-yellow disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`${brandPrimaryButtonClassName} w-full border border-transparent shadow-sm disabled:opacity-50 disabled:cursor-not-allowed`}
         >
           {(isPending || clientPending)
             ? "Processing..."

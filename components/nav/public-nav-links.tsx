@@ -59,8 +59,8 @@ export function PublicAuthLinks() {
         href={signUpHref(pathname)}
         className={`inline-flex items-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-teal focus-visible:ring-offset-0 focus-visible:ring-offset-brand-cream dark:focus-visible:ring-brand-yellow dark:focus-visible:ring-offset-brand-ink ${
           isSignUp
-            ? "bg-brand-teal text-brand-cream dark:bg-brand-yellow dark:text-brand-ink"
-            : "bg-brand-ink text-brand-cream hover:bg-brand-teal dark:bg-brand-seafoam dark:text-brand-ink dark:hover:bg-brand-yellow"
+            ? "bg-brand-teal text-brand-cream hover:bg-brand-ink"
+            : "bg-brand-ink text-brand-cream hover:bg-brand-teal"
         }`}
       >
         Sign up

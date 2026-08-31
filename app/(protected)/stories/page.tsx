@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { brandPrimaryButtonClassName } from "@/lib/ui/button-classes";
 import { redirect } from "next/navigation";
 import { AUTH_ROUTES } from "@/lib/auth/routes";
 import { selfReferencingCanonical } from "@/lib/seo/site-metadata";
@@ -146,7 +147,7 @@ export default async function StoriesPage() {
           </div>
           <Link
             href="/create-story"
-            className="rounded-md bg-brand-ink dark:bg-brand-yellow px-4 py-2 text-sm font-medium text-white dark:text-brand-ink hover:bg-brand-teal dark:hover:bg-brand-seafoam"
+            className={brandPrimaryButtonClassName}
           >
             Create Story
           </Link>
@@ -174,7 +175,7 @@ export default async function StoriesPage() {
             </div>
             <Link
               href="/create-story"
-              className="mt-6 inline-block rounded-md bg-brand-ink dark:bg-brand-yellow px-4 py-2 text-sm font-medium text-white dark:text-brand-ink hover:bg-brand-teal dark:hover:bg-brand-seafoam"
+              className={`mt-6 inline-block ${brandPrimaryButtonClassName}`}
             >
               Create your first story
             </Link>

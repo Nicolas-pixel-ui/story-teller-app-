@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { brandSecondaryButtonClassName, brandSurfaceCardClassName } from "@/lib/ui/button-classes";
 import Link from "next/link";
 import { BookOpen, ChevronDown, Plus, Palette } from "lucide-react";
 import { InferSelectModel } from "drizzle-orm";
@@ -50,7 +51,7 @@ export function StyleGuideSelector({ styleGuides }: StyleGuideSelectorProps) {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-brand-teal px-4 py-2.5 text-sm font-medium text-brand-cream dark:bg-brand-seafoam dark:!text-brand-ink hover:bg-brand-ink transition-colors shadow-sm whitespace-nowrap dark:hover:bg-brand-yellow"
+        className={`${brandSecondaryButtonClassName} w-full shadow-sm whitespace-nowrap`}
       >
         <Palette className="h-4 w-4" />
         Choose Style Guide
@@ -58,7 +59,7 @@ export function StyleGuideSelector({ styleGuides }: StyleGuideSelectorProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 origin-top-right rounded-md bg-white dark:bg-brand-ink shadow-lg ring-1 ring-brand-seafoam/40 focus:outline-none z-50 border border-brand-seafoam/40 dark:border-brand-seafoam/30">
+        <div className={`absolute right-0 mt-2 w-56 origin-top-right ${brandSurfaceCardClassName} shadow-lg ring-1 ring-brand-seafoam/40 focus:outline-none z-50`}>
           <div className="py-1">
             <div className="px-3 py-2 text-xs font-semibold text-brand-ink/60 dark:text-brand-seafoam uppercase tracking-wider">
               Select Guide

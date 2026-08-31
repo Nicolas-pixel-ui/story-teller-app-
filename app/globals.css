@@ -335,35 +335,18 @@ a {
  * -webkit-text-fill-color). Scope bg-white remap to light mode so dark:bg-* works.
  */
 @media (prefers-color-scheme: dark) {
-  .text-white,
-  .text-brand-cream {
+  .text-white {
     color: var(--brand-ink) !important;
     -webkit-text-fill-color: var(--brand-ink) !important;
   }
 
-  :is(
-      .dark\:bg-brand-yellow,
-      .dark\:bg-brand-seafoam,
-      .dark\:bg-brand-cream,
-      .bg-white:not([class*="dark:bg-brand-ink"]),
-      .bg-zinc-50,
-      .bg-zinc-100,
-      .bg-zinc-200
-    ) {
+  :is(.dark\:bg-brand-yellow, .dark\:bg-brand-seafoam, .dark\:bg-brand-cream) {
     color: var(--brand-ink) !important;
     -webkit-text-fill-color: var(--brand-ink) !important;
     color-scheme: light;
   }
 
-  :is(
-      .dark\:bg-brand-yellow,
-      .dark\:bg-brand-seafoam,
-      .dark\:bg-brand-cream,
-      .bg-white:not([class*="dark:bg-brand-ink"]),
-      .bg-zinc-50,
-      .bg-zinc-100,
-      .bg-zinc-200
-    )
+  :is(.dark\:bg-brand-yellow, .dark\:bg-brand-seafoam, .dark\:bg-brand-cream)
     :is(p, span, h1, h2, h3, h4, h5, h6, a, button, label, svg) {
     color: var(--brand-ink) !important;
     -webkit-text-fill-color: var(--brand-ink) !important;

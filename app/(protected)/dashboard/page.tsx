@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { AUTH_ROUTES } from "@/lib/auth/routes";
 import { selfReferencingCanonical } from "@/lib/seo/site-metadata";
 import Link from "next/link";
+import { brandPrimaryButtonClassName, brandSurfaceCardClassName } from "@/lib/ui/button-classes";
 import { BookOpen, PenTool, TrendingUp, Calendar, ArrowRight, Plus } from "lucide-react";
 import { getStyleGuidesForUser } from "../style-guide/actions";
 import { StyleGuideSelector } from "./style-guide-selector";
@@ -119,7 +120,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             <div className="flex flex-col items-end gap-3 w-full md:w-auto">
               <Link
                 href="/create-story"
-                className="inline-flex items-center justify-center gap-2 rounded-md bg-brand-ink dark:bg-brand-yellow px-4 py-2.5 text-sm font-medium text-brand-cream dark:!text-brand-ink hover:bg-brand-teal dark:hover:bg-brand-seafoam transition-colors shadow-sm w-full"
+                className={`${brandPrimaryButtonClassName} w-full`}
               >
                 <Plus className="h-4 w-4" />
                 New Story
@@ -135,7 +136,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white dark:bg-brand-ink/80 rounded-xl p-6 shadow-sm border border-brand-seafoam/30 flex items-center gap-4">
+          <div className={`${brandSurfaceCardClassName} p-6 flex items-center gap-4`}>
             <div className="p-3 rounded-full bg-brand-seafoam/25 text-brand-teal dark:text-brand-yellow">
               <BookOpen className="h-6 w-6" />
             </div>
@@ -145,7 +146,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             </div>
           </div>
 
-          <div className="bg-white dark:bg-brand-ink/80 rounded-xl p-6 shadow-sm border border-brand-seafoam/30 flex items-center gap-4">
+          <div className={`${brandSurfaceCardClassName} p-6 flex items-center gap-4`}>
             <div className="p-3 rounded-full bg-brand-yellow/25 text-brand-orange dark:text-brand-yellow">
               <PenTool className="h-6 w-6" />
             </div>
@@ -155,7 +156,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             </div>
           </div>
 
-          <div className="bg-white dark:bg-brand-ink/80 rounded-xl p-6 shadow-sm border border-brand-seafoam/30 flex items-center gap-4">
+          <div className={`${brandSurfaceCardClassName} p-6 flex items-center gap-4`}>
             <div className="p-3 rounded-full bg-brand-teal/20 text-brand-teal dark:text-brand-seafoam">
               <TrendingUp className="h-6 w-6" />
             </div>
@@ -184,7 +185,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               {recentStories.map((story) => (
                 <div 
                   key={story.id} 
-                  className="group bg-white dark:bg-brand-ink/80 rounded-xl border border-brand-seafoam/30 overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full"
+                  className={`group ${brandSurfaceCardClassName} overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full`}
                 >
                   <div className="p-6 flex-1">
                     <div className="flex items-start justify-between mb-2">
@@ -231,7 +232,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <div className="mt-6">
                 <Link
                   href="/create-story"
-                  className="inline-flex items-center rounded-md bg-brand-ink dark:bg-brand-yellow px-3 py-2 text-sm font-semibold text-brand-cream dark:!text-brand-ink shadow-sm hover:bg-brand-teal dark:hover:bg-brand-seafoam focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-teal"
+                  className={`${brandPrimaryButtonClassName} px-3 py-2 text-sm font-semibold shadow-sm`}
                 >
                   <Plus className="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />
                   Create Story

@@ -240,6 +240,17 @@ export async function consumeCredit(input: ConsumeCreditInput): Promise<ConsumeC
       return consumeCreditViaSupabase(input);
     }
 
+    const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+    if (
+      message.includes("password authentication") ||
+      message.includes("failed query") ||
+      message.includes("connect_timeout") ||
+      message.includes("econnrefused") ||
+      message.includes("database_not_configured")
+    ) {
+      return consumeCreditViaSupabase(input);
+    }
+
     throw error;
   }
 }

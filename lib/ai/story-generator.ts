@@ -2,9 +2,9 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const apiKey = process.env.GEMINI_API_KEY;
 // Use a specific model version to avoid 404s with generic alias
-const MODEL_NAME = "gemini-3-flash-preview";
-// Scene drafting is currently more reliable on this model than preview aliases.
-const SCENE_MODEL_NAME = process.env.GEMINI_SCENE_MODEL || "gemini-1.5-pro";
+const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-3.6-flash";
+// Scene drafting: prefer an explicit override; default to a currently available flash model.
+const SCENE_MODEL_NAME = process.env.GEMINI_SCENE_MODEL || "gemini-3.6-flash";
 
 if (!apiKey) {
   console.warn("GEMINI_API_KEY is not set. AI story generation will fail if called.");

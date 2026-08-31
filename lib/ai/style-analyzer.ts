@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const apiKey = process.env.GEMINI_API_KEY;
-const MODEL_NAME = "gemini-3-flash-preview";
+const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-3.6-flash";
 
 if (!apiKey) {
   console.warn("GEMINI_API_KEY is not set. AI style analysis will fail if called.");

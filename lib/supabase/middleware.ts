@@ -191,6 +191,16 @@ export async function updateSession(request: NextRequest) {
 
   // If user is not authenticated and trying to access protected route, redirect to sign-in
     if (!user && !isPublic) {
+      if (pathname.startsWith("/api/")) {
+        const unauthorized = NextResponse.json(
+          { error: "Unauthorized", status: 401 },
+          { status: 401 }
+        );
+        for (const cookie of supabaseResponse.cookies.getAll()) {
+          unauthorized.cookies.set(cookie);
+        }
+        return unauthorized;
+      }
       const url = request.nextUrl.clone();
       url.pathname = AUTH_ROUTES.SIGN_IN;
       url.searchParams.set("redirectedFrom", pathname);

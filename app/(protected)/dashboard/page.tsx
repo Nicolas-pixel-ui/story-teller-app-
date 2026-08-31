@@ -119,7 +119,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             <div className="flex flex-col items-end gap-3 w-full md:w-auto">
               <Link
                 href="/create-story"
-                className="inline-flex items-center justify-center gap-2 rounded-md bg-brand-ink dark:bg-brand-yellow px-4 py-2.5 text-sm font-medium text-brand-cream dark:text-brand-ink hover:bg-brand-teal dark:hover:bg-brand-seafoam transition-colors shadow-sm w-full"
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-brand-ink dark:bg-brand-yellow px-4 py-2.5 text-sm font-medium text-brand-cream dark:!text-brand-ink hover:bg-brand-teal dark:hover:bg-brand-seafoam transition-colors shadow-sm w-full"
               >
                 <Plus className="h-4 w-4" />
                 New Story
@@ -140,8 +140,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <BookOpen className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-brand-ink/80">Total Stories</p>
-              <h3 className="text-2xl font-bold text-brand-ink">{stats.totalStories}</h3>
+              <p className="text-sm font-medium text-brand-ink/80 dark:text-brand-seafoam">Total Stories</p>
+              <h3 className="text-2xl font-bold text-brand-ink dark:text-brand-yellow">{stats.totalStories}</h3>
             </div>
           </div>
 
@@ -150,8 +150,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <PenTool className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-brand-ink/80">Total Words</p>
-              <h3 className="text-2xl font-bold text-brand-ink">{stats.totalWords.toLocaleString()}</h3>
+              <p className="text-sm font-medium text-brand-ink/80 dark:text-brand-seafoam">Total Words</p>
+              <h3 className="text-2xl font-bold text-brand-ink dark:text-brand-yellow">{stats.totalWords.toLocaleString()}</h3>
             </div>
           </div>
 
@@ -160,8 +160,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <TrendingUp className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-brand-ink/80">Writing Streak</p>
-              <h3 className="text-2xl font-bold text-brand-ink">{stats.streak} Days</h3>
+              <p className="text-sm font-medium text-brand-ink/80 dark:text-brand-seafoam">Writing Streak</p>
+              <h3 className="text-2xl font-bold text-brand-ink dark:text-brand-yellow">{stats.streak} Days</h3>
             </div>
           </div>
         </div>
@@ -188,10 +188,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                 >
                   <div className="p-6 flex-1">
                     <div className="flex items-start justify-between mb-2">
-                      <div className="inline-flex items-center rounded-full border border-brand-seafoam/40 px-2.5 py-0.5 text-xs font-semibold text-brand-ink">
+                      <div className="inline-flex items-center rounded-full border border-brand-seafoam/40 px-2.5 py-0.5 text-xs font-semibold text-brand-ink dark:text-brand-seafoam">
                         {story.mode === 'quick' ? 'Quick Mode' : 'Comprehensive'}
                       </div>
-                      <span className="text-xs text-brand-ink/80 flex items-center gap-1">
+                      <span className="text-xs text-brand-ink/80 dark:text-brand-seafoam flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         {story.updatedAt
                           ? new Date(story.updatedAt).toLocaleDateString()
@@ -199,11 +199,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                       </span>
                     </div>
                     
-                    <h3 className="text-lg font-bold text-brand-ink mb-2 line-clamp-1">
+                    <h3 className="text-lg font-bold text-brand-ink dark:text-brand-yellow mb-2 line-clamp-1">
                       {story.title || "Untitled Story"}
                     </h3>
                     
-                    <p className="text-sm text-brand-ink/85 line-clamp-3 mb-4">
+                    <p className="text-sm text-brand-ink/85 dark:text-brand-seafoam line-clamp-3 mb-4">
                       {story.description || "No description provided."}
                     </p>
                   </div>
@@ -211,7 +211,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                   <div className="px-6 py-4 bg-brand-cream/60 dark:bg-brand-ink/60 border-t border-brand-seafoam/30 mt-auto">
                     <Link
                       href={`/stories/${story.id}`}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-white dark:bg-brand-ink border border-brand-seafoam/50 px-4 py-2 text-sm font-medium text-brand-ink hover:bg-brand-cream dark:hover:bg-brand-seafoam/15 transition-colors"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-white dark:bg-brand-ink border border-brand-seafoam/50 px-4 py-2 text-sm font-medium text-brand-ink dark:text-brand-seafoam hover:bg-brand-cream dark:hover:bg-brand-seafoam/15 transition-colors"
                     >
                       Continue Writing
                     </Link>
@@ -231,7 +231,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <div className="mt-6">
                 <Link
                   href="/create-story"
-                  className="inline-flex items-center rounded-md bg-brand-ink dark:bg-brand-yellow px-3 py-2 text-sm font-semibold text-brand-cream dark:text-brand-ink shadow-sm hover:bg-brand-teal dark:hover:bg-brand-seafoam focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-teal"
+                  className="inline-flex items-center rounded-md bg-brand-ink dark:bg-brand-yellow px-3 py-2 text-sm font-semibold text-brand-cream dark:!text-brand-ink shadow-sm hover:bg-brand-teal dark:hover:bg-brand-seafoam focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-teal"
                 >
                   <Plus className="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />
                   Create Story

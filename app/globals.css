@@ -143,16 +143,18 @@ a {
   border-color: var(--brand-ink) !important;
 }
 
-.bg-white {
-  background-color: var(--brand-seafoam) !important;
-}
+@media (prefers-color-scheme: light) {
+  .bg-white {
+    background-color: var(--brand-seafoam) !important;
+  }
 
-.text-white {
-  color: var(--brand-yellow) !important;
-}
+  .text-white {
+    color: var(--brand-yellow) !important;
+  }
 
-.border-white {
-  border-color: var(--brand-yellow) !important;
+  .border-white {
+    border-color: var(--brand-yellow) !important;
+  }
 }
 
 .bg-zinc-50 {
@@ -329,40 +331,40 @@ a {
 }
 
 /*
- * Dark mode contrast: white/zinc remaps to cream, so cream-on-cream hides labels.
- * Only retarget fills that actually stay cream (bg-white !important, or dark: cream buttons).
- * Do not target bg-brand-seafoam — that class is also on dark page shells.
+ * Dark mode contrast: cream fills must use ink labels (Brave/Chromium use
+ * -webkit-text-fill-color). Scope bg-white remap to light mode so dark:bg-* works.
  */
 @media (prefers-color-scheme: dark) {
-  .text-white {
+  .text-white,
+  .text-brand-cream {
     color: var(--brand-ink) !important;
     -webkit-text-fill-color: var(--brand-ink) !important;
   }
 
-  .bg-white,
-  .bg-white *,
-  .bg-zinc-50,
-  .bg-zinc-50 *,
-  .bg-zinc-100,
-  .bg-zinc-100 *,
-  .bg-zinc-200,
-  .bg-zinc-200 * {
+  :is(
+      .dark\:bg-brand-yellow,
+      .dark\:bg-brand-seafoam,
+      .dark\:bg-brand-cream,
+      .bg-white:not([class*="dark:bg-brand-ink"]),
+      .bg-zinc-50,
+      .bg-zinc-100,
+      .bg-zinc-200
+    ) {
     color: var(--brand-ink) !important;
     -webkit-text-fill-color: var(--brand-ink) !important;
+    color-scheme: light;
   }
 
-  .dark\:bg-brand-yellow,
-  .dark\:bg-brand-yellow *,
-  .dark\:bg-brand-seafoam,
-  .dark\:bg-brand-seafoam *,
-  .dark\:bg-brand-cream,
-  .dark\:bg-brand-cream *,
-  .dark\:bg-white,
-  .dark\:bg-white *,
-  .dark\:bg-zinc-50,
-  .dark\:bg-zinc-50 *,
-  .dark\:bg-zinc-100,
-  .dark\:bg-zinc-100 * {
+  :is(
+      .dark\:bg-brand-yellow,
+      .dark\:bg-brand-seafoam,
+      .dark\:bg-brand-cream,
+      .bg-white:not([class*="dark:bg-brand-ink"]),
+      .bg-zinc-50,
+      .bg-zinc-100,
+      .bg-zinc-200
+    )
+    :is(p, span, h1, h2, h3, h4, h5, h6, a, button, label, svg) {
     color: var(--brand-ink) !important;
     -webkit-text-fill-color: var(--brand-ink) !important;
   }

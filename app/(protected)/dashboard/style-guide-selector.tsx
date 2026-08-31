@@ -50,7 +50,7 @@ export function StyleGuideSelector({ styleGuides }: StyleGuideSelectorProps) {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-brand-teal px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-ink transition-colors shadow-sm whitespace-nowrap dark:bg-brand-seafoam dark:text-brand-ink dark:hover:bg-brand-yellow"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-brand-teal px-4 py-2.5 text-sm font-medium text-brand-cream hover:bg-brand-ink transition-colors shadow-sm whitespace-nowrap dark:bg-brand-seafoam dark:text-brand-ink dark:hover:bg-brand-yellow"
       >
         <Palette className="h-4 w-4" />
         Choose Style Guide
@@ -60,7 +60,7 @@ export function StyleGuideSelector({ styleGuides }: StyleGuideSelectorProps) {
       {isOpen && (
         <div className="absolute right-0 mt-2 w-56 origin-top-right rounded-md bg-white dark:bg-brand-ink shadow-lg ring-1 ring-brand-seafoam/40 focus:outline-none z-50 border border-brand-seafoam/40 dark:border-brand-seafoam/30">
           <div className="py-1">
-            <div className="px-3 py-2 text-xs font-semibold text-brand-ink/60 dark:text-brand-seafoam uppercase tracking-wider">
+            <div className="px-3 py-2 text-xs font-semibold text-brand-ink/60 uppercase tracking-wider">
               Select Guide
             </div>
             
@@ -69,14 +69,14 @@ export function StyleGuideSelector({ styleGuides }: StyleGuideSelectorProps) {
                 <button
                   key={guide.id}
                   onClick={() => handleSelect(guide.id)}
-                  className="flex w-full items-center gap-2 px-4 py-2 text-sm text-brand-ink dark:text-brand-seafoam hover:bg-brand-cream dark:hover:bg-brand-seafoam/10 text-left"
+                  className="flex w-full items-center gap-2 px-4 py-2 text-sm text-brand-ink hover:bg-brand-cream dark:hover:bg-brand-seafoam/10 text-left"
                 >
                   <BookOpen className="h-4 w-4 text-brand-teal" />
                   <span className="truncate">{guide.name}</span>
                 </button>
               ))
             ) : (
-              <div className="px-4 py-2 text-sm text-brand-ink/60 dark:text-brand-seafoam italic">No guides found</div>
+              <div className="px-4 py-2 text-sm text-brand-ink/60 italic">No guides found</div>
             )}
 
             <div className="border-t border-brand-seafoam/30 my-1"></div>

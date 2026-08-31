@@ -334,6 +334,11 @@ a {
  * Do not target bg-brand-seafoam — that class is also on dark page shells.
  */
 @media (prefers-color-scheme: dark) {
+  .text-white {
+    color: var(--brand-ink) !important;
+    -webkit-text-fill-color: var(--brand-ink) !important;
+  }
+
   .bg-white,
   .bg-white *,
   .bg-zinc-50,
@@ -343,20 +348,22 @@ a {
   .bg-zinc-200,
   .bg-zinc-200 * {
     color: var(--brand-ink) !important;
+    -webkit-text-fill-color: var(--brand-ink) !important;
   }
 
-  [class~="dark:bg-brand-yellow"],
-  [class~="dark:bg-brand-yellow"] *,
-  [class~="dark:bg-brand-seafoam"],
-  [class~="dark:bg-brand-seafoam"] *,
-  [class~="dark:bg-brand-cream"],
-  [class~="dark:bg-brand-cream"] *,
-  [class~="dark:bg-white"],
-  [class~="dark:bg-white"] *,
-  [class~="dark:bg-zinc-50"],
-  [class~="dark:bg-zinc-50"] *,
-  [class~="dark:bg-zinc-100"],
-  [class~="dark:bg-zinc-100"] * {
+  .dark\:bg-brand-yellow,
+  .dark\:bg-brand-yellow *,
+  .dark\:bg-brand-seafoam,
+  .dark\:bg-brand-seafoam *,
+  .dark\:bg-brand-cream,
+  .dark\:bg-brand-cream *,
+  .dark\:bg-white,
+  .dark\:bg-white *,
+  .dark\:bg-zinc-50,
+  .dark\:bg-zinc-50 *,
+  .dark\:bg-zinc-100,
+  .dark\:bg-zinc-100 * {
     color: var(--brand-ink) !important;
+    -webkit-text-fill-color: var(--brand-ink) !important;
   }
 }

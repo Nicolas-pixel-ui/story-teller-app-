@@ -5,7 +5,7 @@ import { AUTH_ROUTES } from "@/lib/auth/routes";
 import { parseAuthMethod, type AuthMethod } from "@/lib/auth/sign-in-method";
 import { createClient } from "@/lib/supabase/client";
 import { authFieldClassName } from "@/lib/ui/form-classes";
-import { brandPrimaryButtonClassName } from "@/lib/ui/button-classes";
+import { brandPrimaryButtonClassName, brandSurfaceButtonClassName } from "@/lib/ui/button-classes";
 
 type SignInState = {
   error?: string;
@@ -313,7 +313,7 @@ export default function SignInForm({
 
         <a
           href={`${AUTH_ROUTES.GOOGLE}?next=${encodeURIComponent(redirectedFrom || "/dashboard")}`}
-          className="w-full flex items-center justify-center gap-2 py-2 px-4 border border-brand-seafoam/50 rounded-md shadow-sm text-sm font-medium text-brand-ink bg-white hover:bg-brand-cream focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-teal"
+          className={`${brandSurfaceButtonClassName} shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-teal`}
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path

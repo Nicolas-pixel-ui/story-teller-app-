@@ -1,9 +1,16 @@
-/** Navy fill + cream label in all color schemes (avoids cream-on-cream in Brave dark mode). */
-export const brandPrimaryButtonClassName =
-  "inline-flex items-center justify-center gap-2 rounded-md bg-brand-ink px-4 py-2.5 text-sm font-medium text-brand-cream hover:bg-brand-teal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-teal";
+/**
+ * Semantic UI classes backed by literal hex in globals.css.
+ * Avoids Tailwind brand/white remaps that break contrast in Brave dark mode.
+ */
+export const brandPrimaryButtonClassName = "ui-btn-primary";
 
-export const brandSecondaryButtonClassName =
-  "inline-flex items-center justify-center gap-2 rounded-md border border-brand-seafoam/50 bg-brand-teal px-4 py-2.5 text-sm font-medium text-brand-cream hover:bg-brand-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-teal";
+export const brandSecondaryButtonClassName = "ui-btn-secondary";
 
-export const brandSurfaceCardClassName =
-  "rounded-xl border border-brand-seafoam/30 bg-brand-cream dark:bg-brand-ink/80 shadow-sm";
+export const brandSurfaceCardClassName = "ui-stat-card";
+
+export const brandSurfaceLabelClassName = "ui-stat-label";
+
+export const brandSurfaceValueClassName = "ui-stat-value";
+
+/** Bordered button on cards (e.g. Google sign-in). */
+export const brandSurfaceButtonClassName = "ui-surface-btn";

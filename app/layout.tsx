@@ -5,6 +5,7 @@ import "./globals.css";
 import { SiteHeader } from "@/components/nav/site-header";
 import { SiteHeaderFallback } from "@/components/nav/site-header-fallback";
 import ClientParticleBackground from "@/components/ui/client-particle-background";
+import { ThemeInit } from "@/components/ui/theme-init";
 import { getAppUrl } from "@/lib/config/env";
 import {
   DEFAULT_DESCRIPTION,
@@ -47,6 +48,12 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta name="color-scheme" content="light dark" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var d=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light';}catch(e){}})();`,
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -55,6 +62,7 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased relative`}
       >
+        <ThemeInit />
         <ClientParticleBackground />
         <Suspense fallback={<SiteHeaderFallback />}>
           <SiteHeader />

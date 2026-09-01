@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { AUTH_ROUTES } from "@/lib/auth/routes";
 import { selfReferencingCanonical } from "@/lib/seo/site-metadata";
 import Link from "next/link";
-import { brandPrimaryButtonClassName, brandSurfaceCardClassName } from "@/lib/ui/button-classes";
+import { brandPrimaryButtonClassName, brandSurfaceButtonClassName, brandSurfaceCardClassName, brandSurfaceLabelClassName, brandSurfaceValueClassName } from "@/lib/ui/button-classes";
 import { BookOpen, PenTool, TrendingUp, Calendar, ArrowRight, Plus } from "lucide-react";
 import { getStyleGuidesForUser } from "../style-guide/actions";
 import { StyleGuideSelector } from "./style-guide-selector";
@@ -141,8 +141,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <BookOpen className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-brand-ink/80 dark:text-brand-seafoam">Total Stories</p>
-              <h3 className="text-2xl font-bold text-brand-ink dark:text-brand-yellow">{stats.totalStories}</h3>
+              <p className={`text-sm font-medium ${brandSurfaceLabelClassName}`}>Total Stories</p>
+              <h3 className={`text-2xl font-bold ${brandSurfaceValueClassName}`}>{stats.totalStories}</h3>
             </div>
           </div>
 
@@ -151,8 +151,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <PenTool className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-brand-ink/80 dark:text-brand-seafoam">Total Words</p>
-              <h3 className="text-2xl font-bold text-brand-ink dark:text-brand-yellow">{stats.totalWords.toLocaleString()}</h3>
+              <p className={`text-sm font-medium ${brandSurfaceLabelClassName}`}>Total Words</p>
+              <h3 className={`text-2xl font-bold ${brandSurfaceValueClassName}`}>{stats.totalWords.toLocaleString()}</h3>
             </div>
           </div>
 
@@ -161,8 +161,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <TrendingUp className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-brand-ink/80 dark:text-brand-seafoam">Writing Streak</p>
-              <h3 className="text-2xl font-bold text-brand-ink dark:text-brand-yellow">{stats.streak} Days</h3>
+              <p className={`text-sm font-medium ${brandSurfaceLabelClassName}`}>Writing Streak</p>
+              <h3 className={`text-2xl font-bold ${brandSurfaceValueClassName}`}>{stats.streak} Days</h3>
             </div>
           </div>
         </div>
@@ -212,7 +212,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                   <div className="px-6 py-4 bg-brand-cream/60 dark:bg-brand-ink/60 border-t border-brand-seafoam/30 mt-auto">
                     <Link
                       href={`/stories/${story.id}`}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-white dark:bg-brand-ink border border-brand-seafoam/50 px-4 py-2 text-sm font-medium text-brand-ink dark:text-brand-seafoam hover:bg-brand-cream dark:hover:bg-brand-seafoam/15 transition-colors"
+                      className={`${brandSurfaceButtonClassName} w-auto border border-brand-seafoam/50 px-4 py-2 hover:opacity-90 transition-opacity`}
                     >
                       Continue Writing
                     </Link>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AUTH_ROUTES, withRedirectedFrom } from "@/lib/auth/routes";
+import { brandPrimaryButtonClassName } from "@/lib/ui/button-classes";
 
 const inactive =
   "text-sm text-brand-ink/70 dark:text-brand-seafoam hover:text-brand-teal dark:hover:text-brand-yellow transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-teal focus-visible:ring-offset-0 focus-visible:ring-offset-brand-cream dark:focus-visible:ring-brand-yellow dark:focus-visible:ring-offset-brand-ink";
@@ -48,7 +49,6 @@ export function PublicPrimaryNavLinks() {
 export function PublicAuthLinks() {
   const pathname = usePathname() ?? "";
   const isSignIn = pathname.startsWith(AUTH_ROUTES.SIGN_IN);
-  const isSignUp = pathname.startsWith(AUTH_ROUTES.SIGN_UP);
 
   return (
     <div className="ml-auto flex items-center space-x-4">
@@ -57,11 +57,7 @@ export function PublicAuthLinks() {
       </Link>
       <Link
         href={signUpHref(pathname)}
-        className={`inline-flex items-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-teal focus-visible:ring-offset-0 focus-visible:ring-offset-brand-cream dark:focus-visible:ring-brand-yellow dark:focus-visible:ring-offset-brand-ink ${
-          isSignUp
-            ? "bg-brand-teal text-brand-cream hover:bg-brand-ink"
-            : "bg-brand-ink text-brand-cream hover:bg-brand-teal"
-        }`}
+        className={`${brandPrimaryButtonClassName} focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-teal focus-visible:ring-offset-0`}
       >
         Sign up
       </Link>

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-/** Sync `html.dark` + color-scheme for Brave and other browsers that mishandle dark tokens. */
+/** Sync `html.dark` for Tailwind/custom dark rules without enabling Brave forced dark. */
 export function ThemeInit() {
   useEffect(() => {
     const root = document.documentElement;
@@ -10,7 +10,7 @@ export function ThemeInit() {
     const apply = () => {
       const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       root.classList.toggle("dark", isDark);
-      root.style.colorScheme = isDark ? "dark" : "light";
+      root.style.colorScheme = "only light";
     };
 
     apply();

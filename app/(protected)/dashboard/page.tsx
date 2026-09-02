@@ -190,10 +190,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                 >
                   <div className="p-6 flex-1">
                     <div className="flex items-start justify-between mb-2">
-                      <div className="inline-flex items-center rounded-full border border-brand-seafoam/40 px-2.5 py-0.5 text-xs font-semibold text-brand-ink dark:text-brand-seafoam">
+                      <span className="inline-flex items-center rounded-full border border-brand-seafoam/40 px-2.5 py-0.5 text-xs font-semibold text-brand-ink">
                         {story.mode === 'quick' ? 'Quick Mode' : 'Comprehensive'}
-                      </div>
-                      <span className="text-xs text-brand-ink/80 dark:text-brand-seafoam flex items-center gap-1">
+                      </span>
+                      <span className="text-xs text-brand-ink/80 flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         {story.updatedAt
                           ? new Date(story.updatedAt).toLocaleDateString()
@@ -201,11 +201,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                       </span>
                     </div>
                     
-                    <h3 className="text-lg font-bold text-brand-ink dark:text-brand-yellow mb-2 line-clamp-1">
+                    <h3 className="text-lg font-bold text-brand-ink mb-2 line-clamp-1">
                       {story.title || "Untitled Story"}
                     </h3>
                     
-                    <p className="text-sm text-brand-ink/85 dark:text-brand-seafoam line-clamp-3 mb-4">
+                    <p className="text-sm text-brand-ink/85 line-clamp-3 mb-4">
                       {story.description || "No description provided."}
                     </p>
                   </div>

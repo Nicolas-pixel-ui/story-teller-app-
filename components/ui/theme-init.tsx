@@ -10,7 +10,7 @@ export function ThemeInit() {
     const apply = () => {
       const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       root.classList.toggle("dark", isDark);
-      root.style.colorScheme = "light";
+      root.style.colorScheme = "only light";
     };
 
     apply();

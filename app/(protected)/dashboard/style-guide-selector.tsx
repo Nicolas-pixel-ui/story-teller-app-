@@ -62,7 +62,7 @@ export function StyleGuideSelector({ styleGuides }: StyleGuideSelectorProps) {
       {isOpen && (
         <div className={`absolute right-0 mt-2 w-56 origin-top-right ${brandSurfaceCardClassName} shadow-lg ring-1 ring-brand-seafoam/40 focus:outline-none z-50`}>
           <div className="py-1">
-            <div className="px-3 py-2 text-xs font-semibold text-brand-ink/60 dark:text-brand-seafoam uppercase tracking-wider">
+            <div className="px-3 py-2 text-xs font-semibold text-brand-ink/60 uppercase tracking-wider">
               Select Guide
             </div>
             
@@ -71,21 +71,21 @@ export function StyleGuideSelector({ styleGuides }: StyleGuideSelectorProps) {
                 <button
                   key={guide.id}
                   onClick={() => handleSelect(guide.id)}
-                  className="flex w-full items-center gap-2 px-4 py-2 text-sm text-brand-ink dark:text-brand-seafoam hover:bg-brand-cream dark:hover:bg-brand-seafoam/10 text-left"
+                  className="flex w-full items-center gap-2 px-4 py-2 text-sm text-brand-ink hover:bg-brand-cream text-left"
                 >
                   <BookOpen className="h-4 w-4 text-brand-teal" />
                   <span className="truncate">{guide.name}</span>
                 </button>
               ))
             ) : (
-              <div className="px-4 py-2 text-sm text-brand-ink/60 dark:text-brand-seafoam italic">No guides found</div>
+              <div className="px-4 py-2 text-sm text-brand-ink/60 italic">No guides found</div>
             )}
 
             <div className="border-t border-brand-seafoam/30 my-1"></div>
 
             <Link
               href="/style-guide"
-              className="flex w-full items-center gap-2 px-4 py-2 text-sm text-brand-orange dark:text-brand-yellow hover:bg-brand-cream dark:hover:bg-brand-seafoam/10"
+              className="flex w-full items-center gap-2 px-4 py-2 text-sm text-brand-orange hover:bg-brand-cream"
               onClick={() => setIsOpen(false)}
             >
               <Plus className="h-4 w-4" />

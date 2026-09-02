@@ -345,11 +345,9 @@ a {
   color: var(--brand-orange) !important;
 }
 
-
 /* --------------------------------------------------------------------------
- * Cream fills + image-painted black labels.
- * Brave Auto Dark inverts CSS colors but not raster images, so labels stay black
- * on cream cards/buttons.
+ * Cream surfaces (buttons, stat cards) always use ink text, in both themes.
+ * Literal hex + !important so palette remaps and dark: variants cannot override.
  * -------------------------------------------------------------------------- */
 .ui-btn-primary,
 .ui-btn-secondary,
@@ -366,16 +364,17 @@ a {
   text-decoration: none;
   cursor: pointer;
   color-scheme: only light;
-  forced-color-adjust: none;
-  filter: none;
-  color: transparent !important;
-  -webkit-text-fill-color: transparent !important;
-  text-shadow: none !important;
-  background-color: transparent !important;
-  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVQI12NgYGAAAAAEAAEnc6JLAAAAAElFTkSuQmCC") !important;
-  -webkit-background-clip: text !important;
-  background-clip: text !important;
-  box-shadow: inset 0 0 0 100vmax #faf7ef !important;
+  background-color: #faf7ef !important;
+  background-image: none !important;
+  color: #1d2e3f !important;
+  -webkit-text-fill-color: #1d2e3f !important;
+  transition: background-color 0.2s ease;
+}
+
+.ui-btn-primary:hover,
+.ui-btn-secondary:hover,
+.ui-surface-btn:hover {
+  background-color: #f2ece1 !important;
 }
 
 .ui-btn-primary {
@@ -390,36 +389,37 @@ a {
   display: flex;
   width: 100%;
   padding: 0.5rem 1rem;
-  border: 1px solid rgb(250 247 239 / 0.5);
+  border: 1px solid rgb(29 46 63 / 0.2);
+}
+
+.ui-btn-primary svg,
+.ui-btn-secondary svg {
+  color: #1d2e3f !important;
 }
 
 .ui-stat-card {
   border-radius: 0.75rem;
-  border: 1px solid rgb(250 247 239 / 0.3);
+  border: 1px solid rgb(29 46 63 / 0.1);
   background-color: #faf7ef !important;
   background-image: none !important;
   box-shadow: 0 1px 2px rgb(29 46 63 / 0.06);
   color-scheme: only light;
-  forced-color-adjust: none;
-  filter: none;
+  color: #1d2e3f !important;
+  -webkit-text-fill-color: #1d2e3f !important;
 }
 
-.ui-stat-label,
-.ui-stat-value,
-.ui-stat-card p,
-.ui-stat-card h3,
-.ui-stat-card h2,
-.ui-stat-card span,
-.ui-stat-card a,
-.ui-stat-card button,
-.ui-stat-card label {
-  color: transparent !important;
-  -webkit-text-fill-color: transparent !important;
-  text-shadow: none !important;
-  background-color: transparent !important;
-  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVQI12NgYGAAAAAEAAEnc6JLAAAAAElFTkSuQmCC") !important;
-  -webkit-background-clip: text !important;
-  background-clip: text !important;
+.ui-stat-card :not(svg):not(path) {
+  color: #1d2e3f !important;
+  -webkit-text-fill-color: #1d2e3f !important;
+}
+
+.ui-stat-card svg {
+  color: #1d2e3f !important;
+}
+
+.ui-stat-label {
+  color: rgb(29 46 63 / 0.8) !important;
+  -webkit-text-fill-color: rgb(29 46 63 / 0.8) !important;
 }
 
 .ui-stat-value {

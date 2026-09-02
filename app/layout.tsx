@@ -5,6 +5,7 @@ import "./globals.css";
 import { SiteHeader } from "@/components/nav/site-header";
 import { SiteHeaderFallback } from "@/components/nav/site-header-fallback";
 import ClientParticleBackground from "@/components/ui/client-particle-background";
+import { CriticalContrastCss } from "@/components/ui/critical-contrast-css";
 import { ThemeInit } from "@/components/ui/theme-init";
 import { getAppUrl } from "@/lib/config/env";
 import {
@@ -48,10 +49,11 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="color-scheme" content="only light" />
+        <meta name="color-scheme" content="light" />
+        <CriticalContrastCss />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var d=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme='only light';}catch(e){}})();`,
+            __html: `(function(){try{var d=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme='light';}catch(e){}})();`,
           }}
         />
         <script

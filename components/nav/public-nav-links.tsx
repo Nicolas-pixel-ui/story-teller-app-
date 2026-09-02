@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AUTH_ROUTES, withRedirectedFrom } from "@/lib/auth/routes";
-import { brandPrimaryButtonClassName } from "@/lib/ui/button-classes";
+import { brandPrimaryButtonClassName, brandPrimaryButtonStyle } from "@/lib/ui/button-classes";
 
 const inactive =
   "text-sm text-brand-ink/70 dark:text-brand-seafoam hover:text-brand-teal dark:hover:text-brand-yellow transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-teal focus-visible:ring-offset-0 focus-visible:ring-offset-brand-cream dark:focus-visible:ring-brand-yellow dark:focus-visible:ring-offset-brand-ink";
@@ -58,6 +58,7 @@ export function PublicAuthLinks() {
       <Link
         href={signUpHref(pathname)}
         className={`${brandPrimaryButtonClassName} focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-teal focus-visible:ring-offset-0`}
+        style={brandPrimaryButtonStyle}
       >
         Sign up
       </Link>

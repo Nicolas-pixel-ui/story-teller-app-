@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { AUTH_ROUTES } from "@/lib/auth/routes";
 import { selfReferencingCanonical } from "@/lib/seo/site-metadata";
 import Link from "next/link";
-import { brandPrimaryButtonClassName, brandSurfaceButtonClassName, brandSurfaceCardClassName, brandSurfaceLabelClassName, brandSurfaceValueClassName } from "@/lib/ui/button-classes";
+import { brandPrimaryButtonClassName, brandPrimaryButtonStyle, brandSurfaceButtonClassName, brandSurfaceCardClassName, brandSurfaceLabelClassName, brandSurfaceValueClassName } from "@/lib/ui/button-classes";
 import { BookOpen, PenTool, TrendingUp, Calendar, ArrowRight, Plus } from "lucide-react";
 import { getStyleGuidesForUser } from "../style-guide/actions";
 import { StyleGuideSelector } from "./style-guide-selector";
@@ -121,6 +121,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <Link
                 href="/create-story"
                 className={`${brandPrimaryButtonClassName} w-full`}
+                style={brandPrimaryButtonStyle}
               >
                 <Plus className="h-4 w-4" />
                 New Story
@@ -233,6 +234,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                 <Link
                   href="/create-story"
                   className={`${brandPrimaryButtonClassName} px-3 py-2 text-sm font-semibold shadow-sm`}
+                  style={brandPrimaryButtonStyle}
                 >
                   <Plus className="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />
                   Create Story

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #f2ece1;
   --foreground: #1d2e3f;
@@ -355,7 +357,7 @@ a {
   font-weight: 500;
   text-decoration: none;
   cursor: pointer;
-  color-scheme: only light;
+  color-scheme: light;
   forced-color-adjust: none;
   filter: none;
   color: #faf7ef !important;
@@ -401,7 +403,7 @@ a {
   color: #1d2e3f !important;
   -webkit-text-fill-color: #1d2e3f !important;
   box-shadow: 0 1px 2px rgb(29 46 63 / 0.06);
-  color-scheme: only light;
+  color-scheme: light;
   forced-color-adjust: none;
   filter: none;
 }
@@ -480,7 +482,7 @@ html.dark .ui-stat-card svg {
   color: #1d2e3f !important;
   -webkit-text-fill-color: #1d2e3f !important;
   box-shadow: 0 1px 2px rgb(29 46 63 / 0.06);
-  color-scheme: only light;
+  color-scheme: light;
   forced-color-adjust: none;
   filter: none;
 }

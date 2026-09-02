@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { brandSecondaryButtonClassName, brandSurfaceCardClassName } from "@/lib/ui/button-classes";
+import { brandSecondaryButtonClassName, brandSecondaryButtonStyle, brandSurfaceCardClassName } from "@/lib/ui/button-classes";
 import Link from "next/link";
 import { BookOpen, ChevronDown, Plus, Palette } from "lucide-react";
 import { InferSelectModel } from "drizzle-orm";
@@ -52,6 +52,7 @@ export function StyleGuideSelector({ styleGuides }: StyleGuideSelectorProps) {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`${brandSecondaryButtonClassName} w-full shadow-sm whitespace-nowrap`}
+        style={brandSecondaryButtonStyle}
       >
         <Palette className="h-4 w-4" />
         Choose Style Guide

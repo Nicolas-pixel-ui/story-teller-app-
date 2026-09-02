@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { authFieldClassName } from "@/lib/ui/form-classes";
-import { brandPrimaryButtonClassName } from "@/lib/ui/button-classes";
+import { brandPrimaryButtonClassName, brandPrimaryButtonStyle } from "@/lib/ui/button-classes";
 
 type SignUpAction = (previousState: { error?: string } | null | void, formData: FormData) => Promise<{ error?: string } | void | null>;
 
@@ -73,6 +73,7 @@ export default function SignUpForm({
           type="submit"
           disabled={isPending}
           className={`${brandPrimaryButtonClassName} w-full border border-transparent shadow-sm disabled:opacity-50 disabled:cursor-not-allowed`}
+          style={brandPrimaryButtonStyle}
         >
           {isPending ? "Creating account..." : "Sign up"}
         </button>

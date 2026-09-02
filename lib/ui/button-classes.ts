@@ -1,7 +1,16 @@
 /**
  * Semantic UI classes backed by literal hex in globals.css.
- * Avoids Tailwind brand/white remaps that break contrast in Brave dark mode.
+ * Pair with contrast-styles for inline Brave-safe colors.
  */
+export {
+  brandPrimaryButtonStyle,
+  brandSecondaryButtonStyle,
+  brandStatCardStyle as brandSurfaceCardStyle,
+  brandStatLabelStyle as brandSurfaceLabelStyle,
+  brandStatValueStyle as brandSurfaceValueStyle,
+  brandSurfaceButtonStyle,
+} from "./contrast-styles";
+
 export const brandPrimaryButtonClassName = "ui-btn-primary";
 
 export const brandSecondaryButtonClassName = "ui-btn-secondary";

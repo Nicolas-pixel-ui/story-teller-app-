@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { getSupabaseClientForAdminOperations } from "@/lib/db/supabase-fallback";
 import type { AdminUsageStats, RecentSignup } from "./usage-queries";
+import { isExcludedFromUsageMetrics } from "./usage-excluded-accounts";
 
 function daysAgoIso(days: number): string {
   const d = new Date();
@@ -79,10 +80,10 @@ async function listAllPublicUsers(supabase: SupabaseClient): Promise<ListedUser[
 }
 
 async function listUsersForMetrics(supabase: SupabaseClient): Promise<ListedUser[]> {
-  if (getServiceRoleClient()) {
-    return listAllAuthUsers(supabase);
-  }
-  return listAllPublicUsers(supabase);
+  const users = getServiceRoleClient()
+    ? await listAllAuthUsers(supabase)
+    : await listAllPublicUsers(supabase);
+  return users.filter((u) => !isExcludedFromUsageMetrics(u.email));
 }
 
 async function distinctUserIdsSince(
@@ -122,11 +123,13 @@ async function distinctUserIdsSince(
   return ids;
 }
 
-function mergeActiveUserCounts(...sets: Set<string>[]): number {
+function mergeActiveUserCounts(countedUserIds: Set<string>, ...sets: Set<string>[]): number {
   const merged = new Set<string>();
   for (const set of sets) {
     for (const id of set) {
-      merged.add(id);
+      if (countedUserIds.has(id)) {
+        merged.add(id);
+      }
     }
   }
   return merged.size;
@@ -136,6 +139,7 @@ export async function getAdminUsageStatsViaSupabase(): Promise<AdminUsageStats> 
   const supabase = await getSupabaseClientForAdminOperations();
   const hasServiceRole = Boolean(getServiceRoleClient());
   const users = await listUsersForMetrics(supabase);
+  const countedUserIds = new Set(users.map((u) => u.id));
   const now = Date.now();
   const since24h = new Date(now - 24 * 60 * 60 * 1000).toISOString();
   const since7d = daysAgoIso(7);
@@ -199,9 +203,9 @@ export async function getAdminUsageStatsViaSupabase(): Promise<AdminUsageStats> 
     totalUsers: users.length,
     newUsers7d,
     newUsers30d,
-    activeUsers24h: mergeActiveUserCounts(stories24h, credits24h),
-    activeUsers7d: mergeActiveUserCounts(stories7d, credits7d),
-    activeUsers30d: mergeActiveUserCounts(stories30d, credits30d),
+    activeUsers24h: mergeActiveUserCounts(countedUserIds, stories24h, credits24h),
+    activeUsers7d: mergeActiveUserCounts(countedUserIds, stories7d, credits7d),
+    activeUsers30d: mergeActiveUserCounts(countedUserIds, stories30d, credits30d),
     recentlyOnlineUsers,
     totalStories: totalStories ?? 0,
     totalAiGenerations: totalAiGenerations ?? 0,

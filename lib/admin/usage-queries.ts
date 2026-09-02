@@ -6,6 +6,7 @@ import {
   getAdminUsageStatsViaSupabase,
   getRecentSignupsViaSupabase,
 } from "./usage-queries-supabase";
+import { USAGE_METRICS_EXCLUDED_EMAILS } from "./usage-excluded-accounts";
 
 export type AdminUsageStats = {
   totalUsers: number;
@@ -30,6 +31,13 @@ function toCount(value: unknown): number {
   return Number(value ?? 0);
 }
 
+/** `auth.users` rows minus the owner/test accounts hidden from metrics. */
+const countedUsers = sql`(
+  SELECT id, created_at, last_sign_in_at, email
+  FROM auth.users
+  WHERE coalesce(lower(email), '') NOT IN ${USAGE_METRICS_EXCLUDED_EMAILS}
+)`;
+
 async function getAdminUsageStatsViaPostgres(): Promise<AdminUsageStats> {
   const [row] = await db.execute<{
     total_users: string;
@@ -44,15 +52,16 @@ async function getAdminUsageStatsViaPostgres(): Promise<AdminUsageStats> {
     ai_generations_7d: string;
   }>(sql`
     SELECT
-      (SELECT count(*)::int FROM auth.users) AS total_users,
-      (SELECT count(*)::int FROM auth.users WHERE created_at >= now() - interval '7 days') AS new_users_7d,
-      (SELECT count(*)::int FROM auth.users WHERE created_at >= now() - interval '30 days') AS new_users_30d,
+      (SELECT count(*)::int FROM ${countedUsers} u) AS total_users,
+      (SELECT count(*)::int FROM ${countedUsers} u WHERE u.created_at >= now() - interval '7 days') AS new_users_7d,
+      (SELECT count(*)::int FROM ${countedUsers} u WHERE u.created_at >= now() - interval '30 days') AS new_users_30d,
       (
         SELECT count(DISTINCT user_id)::int FROM (
           SELECT user_id FROM public.stories WHERE updated_at >= now() - interval '24 hours'
           UNION
           SELECT user_id FROM public.credit_transactions WHERE created_at >= now() - interval '24 hours'
         ) active
+        WHERE user_id IN (SELECT id FROM ${countedUsers} u)
       ) AS active_users_24h,
       (
         SELECT count(DISTINCT user_id)::int FROM (
@@ -60,6 +69,7 @@ async function getAdminUsageStatsViaPostgres(): Promise<AdminUsageStats> {
           UNION
           SELECT user_id FROM public.credit_transactions WHERE created_at >= now() - interval '7 days'
         ) active
+        WHERE user_id IN (SELECT id FROM ${countedUsers} u)
       ) AS active_users_7d,
       (
         SELECT count(DISTINCT user_id)::int FROM (
@@ -67,10 +77,11 @@ async function getAdminUsageStatsViaPostgres(): Promise<AdminUsageStats> {
           UNION
           SELECT user_id FROM public.credit_transactions WHERE created_at >= now() - interval '30 days'
         ) active
+        WHERE user_id IN (SELECT id FROM ${countedUsers} u)
       ) AS active_users_30d,
       (
-        SELECT count(*)::int FROM auth.users
-        WHERE last_sign_in_at >= now() - interval '15 minutes'
+        SELECT count(*)::int FROM ${countedUsers} u
+        WHERE u.last_sign_in_at >= now() - interval '15 minutes'
       ) AS recently_online_users,
       (SELECT count(*)::int FROM public.stories) AS total_stories,
       (SELECT count(*)::int FROM public.credit_transactions WHERE type = 'debit') AS total_ai_generations,
@@ -100,9 +111,10 @@ async function getRecentSignupsViaPostgres(limit = 15): Promise<RecentSignup[]> 
     email: string;
     created_at: Date;
   }>(sql`
-    SELECT id, email, created_at
-    FROM auth.users
-    ORDER BY created_at DESC
+    SELECT u.id, u.email, u.created_at
+    FROM ${countedUsers} u
+    WHERE u.email IS NOT NULL
+    ORDER BY u.created_at DESC
     LIMIT ${limit}
   `);
 

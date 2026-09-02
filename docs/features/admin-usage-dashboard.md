@@ -31,6 +31,7 @@ As the Story Teller owner/admin, I want to see total users, recent sign-ups, act
 ## Acceptance Criteria
 - `/admin/usage` is accessible only to `nicolas@hartmanns.net`.
 - Metrics reflect live database counts.
+- Owner/test accounts listed in `lib/admin/usage-excluded-accounts.ts` are excluded from all user counts and the recent sign-ups list (content and AI totals are unaffected).
 - Recent sign-ups list shows email and created date.
 - Nav shows **Usage Admin** for the owner only.
 

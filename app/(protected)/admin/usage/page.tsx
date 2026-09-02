@@ -7,6 +7,7 @@ import { isUsageAdminUser, USAGE_ADMIN_ACCESS_DENIED_PATH } from "@/lib/admin/us
 import { adminMetricsLoadWarning } from "@/lib/db/connection-error";
 import { createClient } from "@/lib/supabase/server";
 import { buildDynamicPageMetadata } from "@/lib/seo/dynamic-metadata";
+import { LocalDateTime } from "./local-datetime";
 
 export const dynamic = "force-dynamic";
 
@@ -169,7 +170,7 @@ export default async function UsageAdminPage() {
                   <tr key={signup.id}>
                     <td className="px-4 py-3 text-brand-ink dark:text-brand-yellow">{signup.email}</td>
                     <td className="px-4 py-3 text-brand-ink/70 dark:text-brand-seafoam">
-                      {signup.createdAt.toLocaleString()}
+                      <LocalDateTime value={signup.createdAt} />
                     </td>
                   </tr>
                 ))}

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { AUTH_ROUTES } from "@/lib/auth/routes";
 import { selfReferencingCanonical } from "@/lib/seo/site-metadata";
 import Link from "next/link";
-import { brandPrimaryButtonClassName, brandPrimaryButtonStyle, brandSurfaceButtonClassName, brandSurfaceCardClassName, brandSurfaceLabelClassName, brandSurfaceValueClassName } from "@/lib/ui/button-classes";
+import { brandPrimaryButtonClassName, brandPrimaryButtonStyle, brandSurfaceButtonClassName, brandSurfaceCardClassName, brandSurfaceCardStyle, brandSurfaceLabelClassName, brandSurfaceLabelStyle, brandSurfaceValueClassName, brandSurfaceValueStyle } from "@/lib/ui/button-classes";
 import { BookOpen, PenTool, TrendingUp, Calendar, ArrowRight, Plus } from "lucide-react";
 import { getStyleGuidesForUser } from "../style-guide/actions";
 import { StyleGuideSelector } from "./style-guide-selector";
@@ -137,33 +137,33 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className={`${brandSurfaceCardClassName} p-6 flex items-center gap-4`}>
+          <div className={`${brandSurfaceCardClassName} p-6 flex items-center gap-4`} style={brandSurfaceCardStyle}>
             <div className="p-3 rounded-full bg-brand-seafoam/25 text-brand-teal dark:text-brand-yellow">
               <BookOpen className="h-6 w-6" />
             </div>
             <div>
-              <p className={`text-sm font-medium ${brandSurfaceLabelClassName}`}>Total Stories</p>
-              <h3 className={`text-2xl font-bold ${brandSurfaceValueClassName}`}>{stats.totalStories}</h3>
+              <p className={`text-sm font-medium ${brandSurfaceLabelClassName}`} style={brandSurfaceLabelStyle}>Total Stories</p>
+              <h3 className={`text-2xl font-bold ${brandSurfaceValueClassName}`} style={brandSurfaceValueStyle}>{stats.totalStories}</h3>
             </div>
           </div>
 
-          <div className={`${brandSurfaceCardClassName} p-6 flex items-center gap-4`}>
+          <div className={`${brandSurfaceCardClassName} p-6 flex items-center gap-4`} style={brandSurfaceCardStyle}>
             <div className="p-3 rounded-full bg-brand-yellow/25 text-brand-orange dark:text-brand-yellow">
               <PenTool className="h-6 w-6" />
             </div>
             <div>
-              <p className={`text-sm font-medium ${brandSurfaceLabelClassName}`}>Total Words</p>
-              <h3 className={`text-2xl font-bold ${brandSurfaceValueClassName}`}>{stats.totalWords.toLocaleString()}</h3>
+              <p className={`text-sm font-medium ${brandSurfaceLabelClassName}`} style={brandSurfaceLabelStyle}>Total Words</p>
+              <h3 className={`text-2xl font-bold ${brandSurfaceValueClassName}`} style={brandSurfaceValueStyle}>{stats.totalWords.toLocaleString()}</h3>
             </div>
           </div>
 
-          <div className={`${brandSurfaceCardClassName} p-6 flex items-center gap-4`}>
+          <div className={`${brandSurfaceCardClassName} p-6 flex items-center gap-4`} style={brandSurfaceCardStyle}>
             <div className="p-3 rounded-full bg-brand-teal/20 text-brand-teal dark:text-brand-seafoam">
               <TrendingUp className="h-6 w-6" />
             </div>
             <div>
-              <p className={`text-sm font-medium ${brandSurfaceLabelClassName}`}>Writing Streak</p>
-              <h3 className={`text-2xl font-bold ${brandSurfaceValueClassName}`}>{stats.streak} Days</h3>
+              <p className={`text-sm font-medium ${brandSurfaceLabelClassName}`} style={brandSurfaceLabelStyle}>Writing Streak</p>
+              <h3 className={`text-2xl font-bold ${brandSurfaceValueClassName}`} style={brandSurfaceValueStyle}>{stats.streak} Days</h3>
             </div>
           </div>
         </div>

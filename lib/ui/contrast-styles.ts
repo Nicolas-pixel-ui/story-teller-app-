@@ -1,11 +1,27 @@
 import type { CSSProperties } from "react";
 
+const INK = "#1d2e3f";
+const CREAM = "#faf7ef";
+
+/** Text-shadow trick survives Brave forced-dark inversion better than color alone. */
+const creamLabelText: CSSProperties = {
+  color: "transparent",
+  WebkitTextFillColor: "transparent",
+  textShadow: `0 0 0 ${CREAM}`,
+};
+
+const inkLabelText: CSSProperties = {
+  color: "transparent",
+  WebkitTextFillColor: "transparent",
+  textShadow: `0 0 0 ${INK}`,
+};
+
 /** Inline styles Brave cannot invert away from navy/cream contrast. */
 export const brandPrimaryButtonStyle: CSSProperties = {
-  backgroundColor: "#1d2e3f",
-  color: "#faf7ef",
-  WebkitTextFillColor: "#faf7ef",
-  borderColor: "#1d2e3f",
+  backgroundColor: INK,
+  backgroundImage: `linear-gradient(${INK}, ${INK})`,
+  borderColor: INK,
+  ...creamLabelText,
 };
 
 export const brandSecondaryButtonStyle: CSSProperties = {
@@ -14,21 +30,23 @@ export const brandSecondaryButtonStyle: CSSProperties = {
 };
 
 export const brandSurfaceButtonStyle: CSSProperties = {
-  backgroundColor: "#faf7ef",
-  color: "#1d2e3f",
-  WebkitTextFillColor: "#1d2e3f",
+  backgroundColor: CREAM,
+  backgroundImage: `linear-gradient(${CREAM}, ${CREAM})`,
+  ...inkLabelText,
 };
 
 export const brandSurfaceButtonDarkStyle: CSSProperties = {
-  backgroundColor: "#1d2e3f",
-  color: "#faf7ef",
-  WebkitTextFillColor: "#faf7ef",
+  backgroundColor: INK,
+  backgroundImage: `linear-gradient(${INK}, ${INK})`,
+  borderColor: "rgba(250, 247, 239, 0.4)",
+  ...creamLabelText,
 };
 
 export const brandStatCardStyle: CSSProperties = {
-  backgroundColor: "#faf7ef",
-  color: "#1d2e3f",
-  WebkitTextFillColor: "#1d2e3f",
+  backgroundColor: CREAM,
+  backgroundImage: `linear-gradient(${CREAM}, ${CREAM})`,
+  color: INK,
+  WebkitTextFillColor: INK,
 };
 
 export const brandStatLabelStyle: CSSProperties = {
@@ -37,6 +55,23 @@ export const brandStatLabelStyle: CSSProperties = {
 };
 
 export const brandStatValueStyle: CSSProperties = {
-  color: "#1d2e3f",
-  WebkitTextFillColor: "#1d2e3f",
+  color: INK,
+  WebkitTextFillColor: INK,
+};
+
+export const brandStatCardDarkStyle: CSSProperties = {
+  backgroundColor: INK,
+  backgroundImage: `linear-gradient(${INK}, ${INK})`,
+  color: CREAM,
+  WebkitTextFillColor: CREAM,
+};
+
+export const brandStatLabelDarkStyle: CSSProperties = {
+  color: "rgba(250, 247, 239, 0.85)",
+  WebkitTextFillColor: "rgba(250, 247, 239, 0.85)",
+};
+
+export const brandStatValueDarkStyle: CSSProperties = {
+  color: CREAM,
+  WebkitTextFillColor: CREAM,
 };

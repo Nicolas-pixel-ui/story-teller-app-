@@ -1,6 +1,13 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark {
+  &:where(.dark, .dark *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    @slot;
+  }
+}
 
 :root {
   --background: #f2ece1;
@@ -24,8 +31,8 @@
   --color-brand-seafoam: var(--brand-seafoam);
   --color-brand-gold: var(--brand-gold);
   --color-brand-cream: var(--brand-cream);
-  /* Hard map default neutral palette to requested 4 colors, including /opacity variants (e.g. bg-white/80). */
-  --color-white: var(--brand-seafoam);
+  /* Keep true white for text-white; use brand-seafoam/cream classes for cream surfaces. */
+  --color-white: #ffffff;
   --color-black: var(--brand-ink);
 
   --color-zinc-50: var(--brand-seafoam);
@@ -159,10 +166,6 @@ a {
     background-color: var(--brand-seafoam) !important;
   }
 
-  .text-white {
-    color: var(--brand-yellow) !important;
-  }
-
   .border-white {
     border-color: var(--brand-yellow) !important;
   }
@@ -291,7 +294,8 @@ a {
 }
 
 .dark [class~="dark:text-white"] {
-  color: var(--brand-yellow) !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
 }
 .dark [class~="dark:text-black"] {
   color: var(--brand-teal) !important;
@@ -360,33 +364,39 @@ a {
   color-scheme: light;
   forced-color-adjust: none;
   filter: none;
-  color: #faf7ef !important;
-  -webkit-text-fill-color: #faf7ef !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: 0 0 0 #faf7ef !important;
 }
 
 .ui-btn-primary :not(svg):not(path),
 .ui-btn-secondary :not(svg):not(path) {
-  color: #faf7ef !important;
-  -webkit-text-fill-color: #faf7ef !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: 0 0 0 #faf7ef !important;
 }
 
 .ui-btn-primary {
   background-color: #1d2e3f !important;
+  background-image: linear-gradient(#1d2e3f, #1d2e3f) !important;
   border: 1px solid #1d2e3f;
 }
 
 .ui-btn-primary:hover {
   background-color: #2a3f56 !important;
+  background-image: linear-gradient(#2a3f56, #2a3f56) !important;
   border-color: #2a3f56;
 }
 
 .ui-btn-secondary {
   background-color: #1d2e3f !important;
+  background-image: linear-gradient(#1d2e3f, #1d2e3f) !important;
   border: 1px solid #9b7d2e66;
 }
 
 .ui-btn-secondary:hover {
   background-color: #2a3f56 !important;
+  background-image: linear-gradient(#2a3f56, #2a3f56) !important;
 }
 
 .ui-btn-primary svg,
@@ -394,12 +404,14 @@ a {
   color: #faf7ef !important;
   -webkit-text-fill-color: #faf7ef !important;
   stroke: #faf7ef !important;
+  filter: none !important;
 }
 
 .ui-stat-card {
   border-radius: 0.75rem;
   border: 1px solid rgb(250 247 239 / 0.3);
   background-color: #faf7ef !important;
+  background-image: linear-gradient(#faf7ef, #faf7ef) !important;
   color: #1d2e3f !important;
   -webkit-text-fill-color: #1d2e3f !important;
   box-shadow: 0 1px 2px rgb(29 46 63 / 0.06);
@@ -420,6 +432,7 @@ a {
 
 html.dark .ui-stat-card {
   background-color: #1d2e3f !important;
+  background-image: linear-gradient(#1d2e3f, #1d2e3f) !important;
   color: #faf7ef !important;
   -webkit-text-fill-color: #faf7ef !important;
   border-color: rgb(250 247 239 / 0.25);
@@ -444,6 +457,7 @@ html.dark .ui-stat-card svg {
 @media (prefers-color-scheme: dark) {
   .ui-stat-card {
     background-color: #1d2e3f !important;
+    background-image: linear-gradient(#1d2e3f, #1d2e3f) !important;
     color: #faf7ef !important;
     -webkit-text-fill-color: #faf7ef !important;
     border-color: rgb(250 247 239 / 0.25);

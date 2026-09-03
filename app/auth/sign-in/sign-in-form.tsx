@@ -83,28 +83,21 @@ export default function SignInForm({
   }, []);
 
   useEffect(() => {
-    const destination = redirectedFrom || "/dashboard";
-
+    // Do not redirect from getSession() on mount. In Brave (and some cookie
+    // partition modes) the browser can see a stale session while middleware
+    // does not, which loops /auth/sign-in ↔ /dashboard and blanks the tab.
+    // Server Components already redirect authenticated users; only follow
+    // explicit SIGNED_IN events from an action on this page.
     if (!supabase) {
       return;
     }
 
-    const redirectIfSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.user) {
-        window.location.href = destination;
-      }
-    };
-
-    void redirectIfSession();
-
+    const destination = redirectedFrom || "/dashboard";
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
-        window.location.href = destination;
+        window.location.assign(destination);
       }
     });
 

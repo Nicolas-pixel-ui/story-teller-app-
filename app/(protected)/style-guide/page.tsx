@@ -3,7 +3,6 @@ import { selfReferencingCanonical } from "@/lib/seo/site-metadata";
 import { getStyleGuides } from "./actions";
 import { StyleGuideList } from "./style-guide-list";
 import { CreateGuideButton } from "./create-guide-button";
-import ParticleBackground from "@/components/ui/particle-background";
 
 export const metadata = selfReferencingCanonical("/style-guide");
 
@@ -12,10 +11,6 @@ export default async function StyleGuidePage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 relative overflow-hidden">
-      <div className="absolute inset-0 z-0">
-        <ParticleBackground />
-      </div>
-
       <div className="relative z-10 container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>

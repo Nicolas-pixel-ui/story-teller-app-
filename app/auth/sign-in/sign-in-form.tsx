@@ -58,7 +58,14 @@ export default function SignInForm({
   const isMagic = authMethod === "magic";
   const isPassword = authMethod === "password";
   const otpSent = isOtp && (otpSentLocal || (state?.authMethod === "otp" && Boolean(state?.otpSent)));
-  const supabase = useMemo(() => createClient(), []);
+  const supabase = useMemo(() => {
+    try {
+      return createClient();
+    } catch (error) {
+      console.error("Failed to create browser auth client", error);
+      return null;
+    }
+  }, []);
 
   useEffect(() => {
     if (!window.location.hash) return;
@@ -77,6 +84,10 @@ export default function SignInForm({
 
   useEffect(() => {
     const destination = redirectedFrom || "/dashboard";
+
+    if (!supabase) {
+      return;
+    }
 
     const redirectIfSession = async () => {
       const {
@@ -117,6 +128,10 @@ export default function SignInForm({
 
   async function handleOtpSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!supabase) {
+      setClientError("Sign-in is temporarily unavailable. Refresh the page and try again.");
+      return;
+    }
     if (!email.trim()) {
       setClientError("Email is required");
       return;

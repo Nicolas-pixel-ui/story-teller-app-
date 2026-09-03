@@ -10,8 +10,9 @@ function Stars(props: any) {
   
   // Generate random points in a sphere - client side only to avoid hydration mismatch
   useEffect(() => {
-    const points = new Float32Array(5000 * 3);
-    for (let i = 0; i < 5000; i++) {
+    const count = 800;
+    const points = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
       const u = Math.random();
       const v = Math.random();
       const theta = 2 * Math.PI * u;
@@ -56,7 +57,23 @@ function Stars(props: any) {
 export default function ParticleBackground() {
   return (
     <div className="absolute inset-0 -z-10 h-full w-full opacity-50 dark:opacity-80 pointer-events-none">
-      <Canvas camera={{ position: [0, 0, 1] }}>
+      <Canvas
+        camera={{ position: [0, 0, 1] }}
+        dpr={[1, 1.5]}
+        gl={{
+          antialias: false,
+          alpha: true,
+          powerPreference: "low-power",
+          failIfMajorPerformanceCaveat: true,
+        }}
+        onCreated={({ gl }) => {
+          const canvas = gl.domElement;
+          const onLost = (event: Event) => {
+            event.preventDefault();
+          };
+          canvas.addEventListener("webglcontextlost", onLost, false);
+        }}
+      >
         <Stars />
       </Canvas>
     </div>

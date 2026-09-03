@@ -105,17 +105,23 @@
     --foreground: #faf7ef;
   }
 
-  /* Light form fields keep dark text in dark mode (bg-white remaps to cream). */
+  /*
+   * Dark fields + cream typed text. Literal hex so Brave cannot remap
+   * CSS variables into ink-on-ink. CriticalContrastCss mirrors these rules.
+   */
   input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
   textarea,
   select {
-    color: var(--brand-ink) !important;
-    caret-color: var(--brand-ink);
+    color: #faf7ef !important;
+    -webkit-text-fill-color: #faf7ef !important;
+    caret-color: #faf7ef;
+    background-color: #1d2e3f !important;
   }
 
   input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"])::placeholder,
   textarea::placeholder {
-    color: color-mix(in srgb, var(--brand-ink) 55%, transparent) !important;
+    color: rgb(250 247 239 / 0.55) !important;
+    -webkit-text-fill-color: rgb(250 247 239 / 0.55) !important;
   }
 
   input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):-webkit-autofill,
@@ -124,9 +130,35 @@
   textarea:-webkit-autofill,
   textarea:-webkit-autofill:hover,
   textarea:-webkit-autofill:focus {
-    -webkit-text-fill-color: var(--brand-ink) !important;
-    box-shadow: 0 0 0 1000px var(--brand-seafoam) inset !important;
+    -webkit-text-fill-color: #faf7ef !important;
+    box-shadow: 0 0 0 1000px #1d2e3f inset !important;
   }
+}
+
+/* Same contrast when html.dark is set (ThemeInit) without relying only on media. */
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+.dark textarea,
+.dark select {
+  color: #faf7ef !important;
+  -webkit-text-fill-color: #faf7ef !important;
+  caret-color: #faf7ef;
+  background-color: #1d2e3f !important;
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"])::placeholder,
+.dark textarea::placeholder {
+  color: rgb(250 247 239 / 0.55) !important;
+  -webkit-text-fill-color: rgb(250 247 239 / 0.55) !important;
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):-webkit-autofill,
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):-webkit-autofill:hover,
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):-webkit-autofill:focus,
+.dark textarea:-webkit-autofill,
+.dark textarea:-webkit-autofill:hover,
+.dark textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: #faf7ef !important;
+  box-shadow: 0 0 0 1000px #1d2e3f inset !important;
 }
 
 body {

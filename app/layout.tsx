@@ -4,7 +4,6 @@ import { Suspense } from "react";
 import "./globals.css";
 import { SiteHeader } from "@/components/nav/site-header";
 import { SiteHeaderFallback } from "@/components/nav/site-header-fallback";
-import ClientParticleBackground from "@/components/ui/client-particle-background";
 import { CriticalContrastCss } from "@/components/ui/critical-contrast-css";
 import { ThemeInit } from "@/components/ui/theme-init";
 import { getAppUrl } from "@/lib/config/env";
@@ -65,7 +64,6 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased relative`}
       >
         <ThemeInit />
-        <ClientParticleBackground />
         <Suspense fallback={<SiteHeaderFallback />}>
           <SiteHeader />
         </Suspense>

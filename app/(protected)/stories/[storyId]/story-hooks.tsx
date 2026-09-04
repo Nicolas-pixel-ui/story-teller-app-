@@ -142,7 +142,7 @@ export default function StoryHooks({ storyId, existingHooks }: StoryHooksProps) 
         alert(result.error);
         return;
       }
-      if (result.success && result.refinedText) {
+      if ("refinedText" in result && result.refinedText) {
         setEditingText(result.refinedText);
         router.refresh();
       }

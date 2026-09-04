@@ -429,6 +429,38 @@ a {
   color: #1d2e3f !important;
 }
 
+/* High-contrast CTA on gold/yellow surfaces (Brave-safe). Indigo + white. */
+.ui-btn-ink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  color-scheme: only light;
+  border: 2px solid #ffffff !important;
+  background-color: #4f46e5 !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transition: background-color 0.2s ease;
+}
+
+.ui-btn-ink:hover {
+  background-color: #4338ca !important;
+}
+
+.ui-btn-ink svg,
+.ui-btn-ink path {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
 .ui-stat-card {
   border-radius: 0.75rem;
   border: 1px solid rgb(29 46 63 / 0.1);

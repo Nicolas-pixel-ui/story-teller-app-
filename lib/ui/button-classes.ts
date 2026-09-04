@@ -3,6 +3,7 @@
  * Pair with contrast-styles for inline Brave-safe colors.
  */
 export {
+  brandInkButtonStyle,
   brandPrimaryButtonStyle,
   brandSecondaryButtonStyle,
   brandStatCardStyle as brandSurfaceCardStyle,
@@ -23,3 +24,6 @@ export const brandSurfaceValueClassName = "ui-stat-value";
 
 /** Bordered button on cards (e.g. Google sign-in). */
 export const brandSurfaceButtonClassName = "ui-surface-btn";
+
+/** Dark indigo fill + white text for actions on gold/yellow remapped surfaces (Brave-safe). */
+export const brandInkButtonClassName = "ui-btn-ink";

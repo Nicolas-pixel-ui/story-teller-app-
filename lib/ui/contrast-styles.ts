@@ -10,11 +10,20 @@ const inkOnCream: CSSProperties = {
   WebkitTextFillColor: INK,
 };
 
+/** White on indigo — high contrast on gold surfaces; distinct from navy textareas. */
+const whiteOnIndigo: CSSProperties = {
+  backgroundColor: "#4f46e5",
+  color: "#ffffff",
+  WebkitTextFillColor: "#ffffff",
+};
+
 export const brandPrimaryButtonStyle: CSSProperties = inkOnCream;
 
 export const brandSecondaryButtonStyle: CSSProperties = inkOnCream;
 
 export const brandSurfaceButtonStyle: CSSProperties = inkOnCream;
+
+export const brandInkButtonStyle: CSSProperties = whiteOnIndigo;
 
 export const brandStatCardStyle: CSSProperties = inkOnCream;
 

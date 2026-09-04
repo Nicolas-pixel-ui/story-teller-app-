@@ -4,8 +4,9 @@ import { INSUFFICIENT_CREDITS_PATH, isInsufficientCreditsPayload } from '@/lib/c
 import { isAiActionError } from '@/lib/ai/action-result';
 import { rethrowIfRedirect } from '@/lib/navigation/redirect-error';
 import { StoryStructure } from '@/lib/data/structures';
+import { brandInkButtonClassName, brandInkButtonStyle } from '@/lib/ui/button-classes';
 import { getBeatDraftAction } from '../actions';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Loader2, Sparkles } from 'lucide-react';
 
 interface BeatByBeatEditorProps {
   structure: StoryStructure;
@@ -196,25 +197,35 @@ export default function BeatByBeatEditor({ structure, storyContext, initialBeats
                )}
 
                {/* Editor */}
-               <div className="space-y-2">
-                 <div className="flex justify-between items-center">
+               <div className="space-y-3">
+                 <div className="flex justify-between items-center gap-3">
                    <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Your Beat Content</label>
-                   <div className="flex items-center gap-2">
-                     {error && (
-                       <div className="text-xs text-red-500 flex items-center gap-1">
-                         <AlertCircle className="h-3 w-3" />
-                         {error}
-                       </div>
-                     )}
-                     <button 
-                       onClick={handleGenerateDraft}
-                       disabled={isGenerating}
-                       className="text-xs flex items-center gap-1 text-purple-600 dark:text-purple-400 hover:text-purple-700 disabled:opacity-50 font-medium px-2 py-1 rounded hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
-                     >
-                       {isGenerating ? 'Generating...' : '✨ Generate AI Draft'}
-                     </button>
-                   </div>
+                   {error && (
+                     <div className="text-xs text-red-500 flex items-center gap-1">
+                       <AlertCircle className="h-3 w-3" />
+                       {error}
+                     </div>
+                   )}
                  </div>
+                 <button 
+                   type="button"
+                   onClick={handleGenerateDraft}
+                   disabled={isGenerating}
+                   className={`${brandInkButtonClassName} w-full px-5 py-3.5 text-base font-bold shadow-md disabled:opacity-50 disabled:cursor-not-allowed`}
+                   style={brandInkButtonStyle}
+                 >
+                   {isGenerating ? (
+                     <>
+                       <Loader2 className="h-5 w-5 animate-spin" />
+                       Generating...
+                     </>
+                   ) : (
+                     <>
+                       <Sparkles className="h-5 w-5" />
+                       Generate AI Draft
+                     </>
+                   )}
+                 </button>
                  <textarea
                    value={currentBeatData.userContent || ''}
                    onChange={(e) => handleContentChange(e.target.value)}

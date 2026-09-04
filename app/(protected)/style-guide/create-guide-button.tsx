@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { createStyleGuide } from "./actions";
+import { brandInkButtonClassName, brandInkButtonStyle } from "@/lib/ui/button-classes";
 
 export function CreateGuideButton() {
   const [isCreating, setIsCreating] = useState(false);
@@ -26,7 +27,8 @@ export function CreateGuideButton() {
     <button
       onClick={handleCreate}
       disabled={isCreating}
-      className="flex items-center gap-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+      className={`${brandInkButtonClassName} px-4 py-2 text-sm disabled:opacity-50`}
+      style={brandInkButtonStyle}
     >
       <Plus className="w-4 h-4" />
       {isCreating ? "Creating..." : "New Style Guide"}

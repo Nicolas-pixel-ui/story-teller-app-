@@ -2,6 +2,8 @@ import type { CSSProperties } from "react";
 
 const INK = "#1d2e3f";
 const CREAM = "#faf7ef";
+const WHITE = "#ffffff";
+const GOLD = "#9b7d2e";
 
 /** Inline fallbacks mirroring the .ui-* rules: cream fill, ink text. */
 const inkOnCream: CSSProperties = {
@@ -35,4 +37,33 @@ export const brandStatLabelStyle: CSSProperties = {
 export const brandStatValueStyle: CSSProperties = {
   color: INK,
   WebkitTextFillColor: INK,
+};
+
+/** Inactive style-guide sidebar tab: white on ink, gold border (Brave-safe). */
+export const brandStyleTabStyle: CSSProperties = {
+  colorScheme: "dark",
+  backgroundColor: INK,
+  backgroundImage: "none",
+  border: `2px solid ${GOLD}`,
+  color: WHITE,
+  WebkitTextFillColor: WHITE,
+};
+
+/** Active style-guide sidebar tab: white on gold. */
+export const brandStyleTabActiveStyle: CSSProperties = {
+  colorScheme: "dark",
+  backgroundColor: GOLD,
+  backgroundImage: "none",
+  border: `2px solid ${GOLD}`,
+  color: WHITE,
+  WebkitTextFillColor: WHITE,
+};
+
+/** Style-guide editor panel: white copy on ink. */
+export const brandStylePanelStyle: CSSProperties = {
+  colorScheme: "dark",
+  backgroundColor: INK,
+  backgroundImage: "none",
+  color: WHITE,
+  WebkitTextFillColor: WHITE,
 };

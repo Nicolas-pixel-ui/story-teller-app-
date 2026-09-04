@@ -9,6 +9,9 @@ export {
   brandStatCardStyle as brandSurfaceCardStyle,
   brandStatLabelStyle as brandSurfaceLabelStyle,
   brandStatValueStyle as brandSurfaceValueStyle,
+  brandStylePanelStyle,
+  brandStyleTabActiveStyle,
+  brandStyleTabStyle,
   brandSurfaceButtonStyle,
 } from "./contrast-styles";
 
@@ -27,3 +30,9 @@ export const brandSurfaceButtonClassName = "ui-surface-btn";
 
 /** Dark indigo fill + white text for actions on gold/yellow remapped surfaces (Brave-safe). */
 export const brandInkButtonClassName = "ui-btn-ink";
+
+export const brandStyleTabClassName = "ui-style-tab";
+
+export const brandStyleTabActiveClassName = "ui-style-tab ui-style-tab-active";
+
+export const brandStylePanelClassName = "ui-style-panel";

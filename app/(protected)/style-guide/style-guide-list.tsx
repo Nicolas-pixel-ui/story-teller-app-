@@ -20,7 +20,7 @@ export function StyleGuideList({ initialGuides }: StyleGuideListProps) {
         <StyleGuideCard key={guide.id} guide={guide} />
       ))}
       {initialGuides.length === 0 && (
-        <div className="col-span-full py-12 text-center text-zinc-500 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
+        <div className="col-span-full py-12 text-center rounded-xl border-2 border-dashed ui-style-panel" style={{ color: "#faf7ef", WebkitTextFillColor: "#faf7ef", backgroundColor: "#1d2e3f", borderColor: "#faf7ef" }}>
           No style guides yet. Create one to get started!
         </div>
       )}
@@ -46,11 +46,14 @@ function StyleGuideCard({ guide }: { guide: StyleGuide }) {
   };
 
   return (
-    <div className="group relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 hover:shadow-lg transition-all duration-200">
+    <div
+      className="group relative rounded-xl p-6 ui-style-panel"
+      style={{ backgroundColor: "#1d2e3f", color: "#faf7ef", WebkitTextFillColor: "#faf7ef", border: "1px solid #faf7ef" }}
+    >
       <div className="flex justify-between items-start mb-4">
         <div>
           <h3 className="font-semibold text-lg mb-1">{guide.name}</h3>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs" style={{ color: "#faf7ef", WebkitTextFillColor: "#faf7ef" }}>
             Updated {new Date(guide.updatedAt).toLocaleDateString()}
           </p>
         </div>
@@ -58,7 +61,8 @@ function StyleGuideCard({ guide }: { guide: StyleGuide }) {
            <button
              onClick={handleDuplicate}
              disabled={isPending}
-             className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+             className="p-2 transition-colors"
+             style={{ color: "#faf7ef", WebkitTextFillColor: "#faf7ef" }}
              title="Duplicate"
            >
              <Copy className="w-4 h-4" />
@@ -76,11 +80,11 @@ function StyleGuideCard({ guide }: { guide: StyleGuide }) {
 
       <div className="space-y-3 mb-6">
         <div className="flex items-center gap-2 text-sm">
-          <span className="w-20 text-zinc-500">Tone:</span>
+          <span className="w-20" style={{ color: "#faf7ef", WebkitTextFillColor: "#faf7ef" }}>Tone:</span>
           <span className="font-medium capitalize">{guide.toneId?.replace('_', ' ') || "—"}</span>
         </div>
         <div className="flex items-center gap-2 text-sm">
-          <span className="w-20 text-zinc-500">Complexity:</span>
+          <span className="w-20" style={{ color: "#faf7ef", WebkitTextFillColor: "#faf7ef" }}>Complexity:</span>
           <span className="font-medium">{guide.complexityLevel || "—"}</span>
         </div>
       </div>
@@ -103,7 +107,8 @@ function StyleGuideCard({ guide }: { guide: StyleGuide }) {
         
         <Link
           href={`/style-guide/${guide.id}`}
-          className="text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 flex items-center gap-1"
+          className="text-sm font-medium flex items-center gap-1"
+          style={{ color: "#faf7ef", WebkitTextFillColor: "#faf7ef" }}
         >
           Edit Guide <Edit2 className="w-3 h-3" />
         </Link>

@@ -9,6 +9,17 @@ import { tones, writingStyles, perspectives } from "@/lib/data/styleOptions";
 import { InferSelectModel } from "drizzle-orm";
 import { styleGuides, dictionaryEntries } from "@/lib/db/schema";
 import { StyleAnalysisResult } from "@/lib/ai/style-analyzer";
+import { BraveMenuSelect, StyleChoiceList } from "./style-choice";
+import {
+  brandInkButtonClassName,
+  brandInkButtonStyle,
+  brandStylePanelClassName,
+  brandStylePanelStyle,
+  brandStyleTabActiveClassName,
+  brandStyleTabActiveStyle,
+  brandStyleTabClassName,
+  brandStyleTabStyle,
+} from "@/lib/ui/button-classes";
 
 type StyleGuide = InferSelectModel<typeof styleGuides>;
 type DictionaryEntry = InferSelectModel<typeof dictionaryEntries>;
@@ -158,6 +169,8 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
   const [activeTab, setActiveTab] = useState<"overview" | "visuals" | "dictionary" | "ai-import">("overview");
   const [isSaving, startTransition] = useTransition();
   const [formData, setFormData] = useState(guide);
+  const [styleTextHidden, setStyleTextHidden] = useState(false);
+  const [textHideMode, setTextHideMode] = useState<"opacity" | "visibility">("visibility");
 
   // Dictionary State
   const [dictionary, setDictionary] = useState(initialDictionary);
@@ -448,24 +461,36 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-5xl">
+    <div className="ui-style-shell container mx-auto px-4 py-8 max-w-5xl">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <Link
             href="/style-guide"
-            className="p-2 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-full transition-colors"
+            className="p-2 rounded-full"
+            style={{ color: "#faf7ef", WebkitTextFillColor: "#faf7ef" }}
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold">{formData.name}</h1>
-            <p className="text-zinc-500 text-sm">Edit Style Guide</p>
+            <h1
+              className="text-2xl font-bold"
+              style={{ color: "#faf7ef", WebkitTextFillColor: "#faf7ef" }}
+            >
+              {formData.name}
+            </h1>
+            <p
+              className="text-sm"
+              style={{ color: "#faf7ef", WebkitTextFillColor: "#faf7ef" }}
+            >
+              Edit Style Guide
+            </p>
           </div>
         </div>
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
+          className={`${brandInkButtonClassName} px-4 py-2 text-sm disabled:opacity-50`}
+          style={brandInkButtonStyle}
         >
           <Save className="w-4 h-4" />
           {isSaving ? "Saving..." : "Save Changes"}
@@ -476,42 +501,34 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
         {/* Sidebar Tabs */}
         <div className="col-span-12 md:col-span-3 space-y-2">
           <button
+            type="button"
             onClick={() => setActiveTab("overview")}
-            className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
-              activeTab === "overview"
-                ? "bg-zinc-100 dark:bg-zinc-800 font-medium"
-                : "hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-500"
-            }`}
+            className={activeTab === "overview" ? brandStyleTabActiveClassName : brandStyleTabClassName}
+            style={activeTab === "overview" ? brandStyleTabActiveStyle : brandStyleTabStyle}
           >
             Overview & Tone
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab("visuals")}
-            className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
-              activeTab === "visuals"
-                ? "bg-zinc-100 dark:bg-zinc-800 font-medium"
-                : "hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-500"
-            }`}
+            className={activeTab === "visuals" ? brandStyleTabActiveClassName : brandStyleTabClassName}
+            style={activeTab === "visuals" ? brandStyleTabActiveStyle : brandStyleTabStyle}
           >
             Visual Identity
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab("dictionary")}
-            className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
-              activeTab === "dictionary"
-                ? "bg-zinc-100 dark:bg-zinc-800 font-medium"
-                : "hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-500"
-            }`}
+            className={activeTab === "dictionary" ? brandStyleTabActiveClassName : brandStyleTabClassName}
+            style={activeTab === "dictionary" ? brandStyleTabActiveStyle : brandStyleTabStyle}
           >
             Dictionary
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab("ai-import")}
-            className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
-              activeTab === "ai-import"
-                ? "bg-zinc-100 dark:bg-zinc-800 font-medium"
-                : "hover:bg-zinc-50 dark:hover:bg-zinc-900 text-zinc-500"
-            }`}
+            className={activeTab === "ai-import" ? brandStyleTabActiveClassName : brandStyleTabClassName}
+            style={activeTab === "ai-import" ? brandStyleTabActiveStyle : brandStyleTabStyle}
           >
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4" />
@@ -521,86 +538,99 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
         </div>
 
         {/* Content Area */}
-        <div className="col-span-12 md:col-span-9 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
+        <div
+          className={`col-span-12 md:col-span-9 ${brandStylePanelClassName} rounded-xl p-6`}
+          style={brandStylePanelStyle}
+        >
           {activeTab === "overview" && (
             <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">Guide Name</label>
-                <input
-                  type="text"
-                  value={formData.name || ""}
-                  onChange={(e) => handleChange("name", e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
-                />
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  type="button"
+                  aria-pressed={styleTextHidden}
+                  onClick={() => setStyleTextHidden((current) => !current)}
+                  className={`${brandInkButtonClassName} px-4 py-2 text-sm w-fit`}
+                  style={brandInkButtonStyle}
+                >
+                  {styleTextHidden ? "Show Style Text" : "Choose New Style"}
+                </button>
+                <fieldset className="ui-hide-mode">
+                  <legend className="sr-only">How to hide style text</legend>
+                  <label className="ui-hide-mode-option">
+                    <input
+                      type="radio"
+                      name="style-text-hide-mode"
+                      checked={textHideMode === "opacity"}
+                      onChange={() => setTextHideMode("opacity")}
+                    />
+                    Opacity (keep spacing)
+                  </label>
+                  <label className="ui-hide-mode-option">
+                    <input
+                      type="radio"
+                      name="style-text-hide-mode"
+                      checked={textHideMode === "visibility"}
+                      onChange={() => setTextHideMode("visibility")}
+                    />
+                    Visibility (no selection)
+                  </label>
+                </fieldset>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Tone</label>
-                  <select
+                  <label className="block text-sm font-medium mb-2">Guide Name</label>
+                  <input
+                    type="text"
+                    value={formData.name || ""}
+                    onChange={(e) => handleChange("name", e.target.value)}
+                    className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <StyleChoiceList
+                    label="Tone"
                     value={formData.toneId || ""}
-                    onChange={(e) => handleChange("toneId", e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
-                  >
-                    <option value="">Select Tone...</option>
-                    {tones.map((t) => (
-                      <option key={t.id} value={t.id}>{t.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Writing Style</label>
-                  <select
+                    options={tones.map((t) => ({ value: t.id, label: t.label }))}
+                    onChange={(next) => handleChange("toneId", next)}
+                  />
+                  <StyleChoiceList
+                    label="Writing Style"
                     value={formData.writingStyleId || ""}
-                    onChange={(e) => handleChange("writingStyleId", e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
-                  >
-                     <option value="">Select Style...</option>
-                    {writingStyles.map((s) => (
-                      <option key={s.id} value={s.id}>{s.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Perspective</label>
-                  <select
+                    options={writingStyles.map((s) => ({ value: s.id, label: s.label }))}
+                    onChange={(next) => handleChange("writingStyleId", next)}
+                  />
+                  <StyleChoiceList
+                    label="Perspective"
                     value={formData.perspectiveId || ""}
-                    onChange={(e) => handleChange("perspectiveId", e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
-                  >
-                     <option value="">Select Perspective...</option>
-                    {perspectives.map((p) => (
-                      <option key={p.id} value={p.id}>{p.label}</option>
-                    ))}
-                  </select>
+                    options={perspectives.map((p) => ({ value: p.id, label: p.label }))}
+                    onChange={(next) => handleChange("perspectiveId", next)}
+                  />
+                  <StyleChoiceList
+                    label="Complexity Level"
+                    value={formData.complexityLevel || ""}
+                    options={COMPLEXITY_LEVELS.map((level) => ({ value: level, label: level }))}
+                    onChange={(next) => handleChange("complexityLevel", next)}
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Complexity Level</label>
-                  <select
-                    value={formData.complexityLevel || ""}
-                    onChange={(e) => handleChange("complexityLevel", e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
-                  >
-                     <option value="">Select Level...</option>
-                    {COMPLEXITY_LEVELS.map((level) => (
-                      <option key={level} value={level}>{level}</option>
-                    ))}
-                  </select>
+                  <label className="block text-sm font-medium mb-2">Tone Description / AI Instructions</label>
+                  <textarea
+                    value={formData.toneDescription || ""}
+                    onChange={(e) => handleChange("toneDescription", e.target.value)}
+                    rows={4}
+                    className={
+                      styleTextHidden
+                        ? `w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2 ui-style-text-hidden--${textHideMode}`
+                        : "w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
+                    }
+                    placeholder="Describe the voice and tone in detail (e.g., 'Friendly but professional, avoiding jargon...')"
+                    aria-hidden={styleTextHidden}
+                    tabIndex={styleTextHidden ? -1 : undefined}
+                  />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Tone Description / AI Instructions</label>
-                <textarea
-                  value={formData.toneDescription || ""}
-                  onChange={(e) => handleChange("toneDescription", e.target.value)}
-                  rows={4}
-                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
-                  placeholder="Describe the voice and tone in detail (e.g., 'Friendly but professional, avoiding jargon...')"
-                />
               </div>
             </div>
           )}
@@ -610,7 +640,7 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
               <div>
                 <h3 className="text-lg font-semibold mb-4">Color Palette</h3>
                 
-                <div className="mb-6 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                <div className="mb-6 p-4 rounded-lg ui-style-panel">
                   <label className="block text-sm font-medium mb-3">Quick Palette Presets</label>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {COLOR_PALETTES.map((palette) => (
@@ -717,37 +747,20 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
               <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800">
                 <h3 className="text-lg font-semibold mb-4">Typography</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Heading Font</label>
-                    <select
-                      value={formData.fontHeading || ""}
-                      onChange={(e) => handleChange("fontHeading", e.target.value)}
-                      className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
-                    >
-                      <option value="">Select a heading font</option>
-                      {HEADING_FONTS.map((font) => (
-                        <option key={font} value={font}>
-                          {font}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-zinc-500 mt-1">Google Fonts supported in exports</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Body Font</label>
-                    <select
-                      value={formData.fontBody || ""}
-                      onChange={(e) => handleChange("fontBody", e.target.value)}
-                      className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
-                    >
-                      <option value="">Select a body font</option>
-                      {BODY_FONTS.map((font) => (
-                        <option key={font} value={font}>
-                          {font}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <BraveMenuSelect
+                    label="Heading Font"
+                    value={formData.fontHeading || ""}
+                    placeholder="Select a heading font"
+                    options={HEADING_FONTS.map((font) => ({ value: font, label: font }))}
+                    onChange={(next) => handleChange("fontHeading", next)}
+                  />
+                  <BraveMenuSelect
+                    label="Body Font"
+                    value={formData.fontBody || ""}
+                    placeholder="Select a body font"
+                    options={BODY_FONTS.map((font) => ({ value: font, label: font }))}
+                    onChange={(next) => handleChange("fontBody", next)}
+                  />
                 </div>
               </div>
             </div>
@@ -759,7 +772,7 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
                 <h3 className="text-lg font-semibold">Custom Dictionary</h3>
               </div>
 
-              <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-lg border border-zinc-200 dark:border-zinc-700">
+              <div className="p-4 rounded-lg ui-style-panel">
                 <h4 className="text-sm font-medium mb-3">Add New Term</h4>
                 
                 {/* Row 1: Term and Definition */}
@@ -782,58 +795,38 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
 
                 {/* Row 2: Category and Term Type */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                  <select
+                  <BraveMenuSelect
+                    label="Category"
                     value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                    className="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm"
-                  >
-                    <option value="">Select Category (Optional)</option>
-                    {DICTIONARY_CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                  <select
+                    placeholder="Select Category (Optional)"
+                    options={DICTIONARY_CATEGORIES.map((cat) => ({ value: cat, label: cat }))}
+                    onChange={setNewCategory}
+                  />
+                  <BraveMenuSelect
+                    label="Term Type"
                     value={newTermType}
-                    onChange={(e) => setNewTermType(e.target.value)}
-                    className="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm"
-                  >
-                    <option value="">Select Term Type (Optional)</option>
-                    {TERM_TYPES.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="Select Term Type (Optional)"
+                    options={TERM_TYPES.map((type) => ({ value: type, label: type }))}
+                    onChange={setNewTermType}
+                  />
                 </div>
 
                 {/* Row 3: Importance and Usage Frequency */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                  <select
+                  <BraveMenuSelect
+                    label="Importance"
                     value={newImportance}
-                    onChange={(e) => setNewImportance(e.target.value)}
-                    className="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm"
-                  >
-                    <option value="">Select Importance (Optional)</option>
-                    {IMPORTANCE_LEVELS.map((level) => (
-                      <option key={level} value={level}>
-                        {level}
-                      </option>
-                    ))}
-                  </select>
-                  <select
+                    placeholder="Select Importance (Optional)"
+                    options={IMPORTANCE_LEVELS.map((level) => ({ value: level, label: level }))}
+                    onChange={setNewImportance}
+                  />
+                  <BraveMenuSelect
+                    label="Usage Frequency"
                     value={newUsageFrequency}
-                    onChange={(e) => setNewUsageFrequency(e.target.value)}
-                    className="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm"
-                  >
-                    <option value="">Select Usage Frequency (Optional)</option>
-                    {USAGE_FREQUENCIES.map((freq) => (
-                      <option key={freq} value={freq}>
-                        {freq}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="Select Usage Frequency (Optional)"
+                    options={USAGE_FREQUENCIES.map((freq) => ({ value: freq, label: freq }))}
+                    onChange={setNewUsageFrequency}
+                  />
                 </div>
 
                 {/* Row 4: Usage Rule */}
@@ -880,51 +873,37 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <select
+                          <BraveMenuSelect
+                            label="Category"
                             value={editFormData.category}
-                            onChange={(e) => setEditFormData({...editFormData, category: e.target.value})}
-                            className="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm"
-                          >
-                            <option value="">Select Category</option>
-                            {DICTIONARY_CATEGORIES.map((cat) => (
-                              <option key={cat} value={cat}>{cat}</option>
-                            ))}
-                          </select>
-                          
-                          <select
+                            placeholder="Select Category"
+                            options={DICTIONARY_CATEGORIES.map((cat) => ({ value: cat, label: cat }))}
+                            onChange={(next) => setEditFormData({ ...editFormData, category: next })}
+                          />
+                          <BraveMenuSelect
+                            label="Term Type"
                             value={editFormData.termType}
-                            onChange={(e) => setEditFormData({...editFormData, termType: e.target.value})}
-                            className="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm"
-                          >
-                            <option value="">Select Term Type</option>
-                            {TERM_TYPES.map((type) => (
-                              <option key={type} value={type}>{type}</option>
-                            ))}
-                          </select>
+                            placeholder="Select Term Type"
+                            options={TERM_TYPES.map((type) => ({ value: type, label: type }))}
+                            onChange={(next) => setEditFormData({ ...editFormData, termType: next })}
+                          />
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <select
+                          <BraveMenuSelect
+                            label="Importance"
                             value={editFormData.importance}
-                            onChange={(e) => setEditFormData({...editFormData, importance: e.target.value})}
-                            className="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm"
-                          >
-                            <option value="">Select Importance</option>
-                            {IMPORTANCE_LEVELS.map((level) => (
-                              <option key={level} value={level}>{level}</option>
-                            ))}
-                          </select>
-                          
-                          <select
+                            placeholder="Select Importance"
+                            options={IMPORTANCE_LEVELS.map((level) => ({ value: level, label: level }))}
+                            onChange={(next) => setEditFormData({ ...editFormData, importance: next })}
+                          />
+                          <BraveMenuSelect
+                            label="Usage Frequency"
                             value={editFormData.usageFrequency}
-                            onChange={(e) => setEditFormData({...editFormData, usageFrequency: e.target.value})}
-                            className="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-sm"
-                          >
-                            <option value="">Select Usage Frequency</option>
-                            {USAGE_FREQUENCIES.map((freq) => (
-                              <option key={freq} value={freq}>{freq}</option>
-                            ))}
-                          </select>
+                            placeholder="Select Usage Frequency"
+                            options={USAGE_FREQUENCIES.map((freq) => ({ value: freq, label: freq }))}
+                            onChange={(next) => setEditFormData({ ...editFormData, usageFrequency: next })}
+                          />
                         </div>
                         
                         <input

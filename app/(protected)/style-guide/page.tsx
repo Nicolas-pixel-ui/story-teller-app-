@@ -10,12 +10,20 @@ export default async function StyleGuidePage() {
   const guides = await getStyleGuides();
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 relative overflow-hidden">
+    <div className="ui-style-shell min-h-screen relative overflow-hidden">
       <div className="relative z-10 container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight mb-2">Style Guides</h1>
-            <p className="text-zinc-500 dark:text-zinc-400">
+            <h1
+              className="text-3xl font-bold tracking-tight mb-2"
+              style={{ color: "#faf7ef", WebkitTextFillColor: "#faf7ef" }}
+            >
+              Style Guides
+            </h1>
+            <p
+              className="text-sm"
+              style={{ color: "#faf7ef", WebkitTextFillColor: "#faf7ef" }}
+            >
               Manage your brand voice, tone, and visual identity across all stories.
             </p>
           </div>

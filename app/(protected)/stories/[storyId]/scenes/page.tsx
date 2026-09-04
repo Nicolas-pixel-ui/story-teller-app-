@@ -4,6 +4,8 @@ import { getScenes, createScene } from "./actions";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+export const maxDuration = 60;
+
 export async function generateMetadata({
   params,
 }: {

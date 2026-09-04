@@ -11,6 +11,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { INSUFFICIENT_CREDITS_PATH, isInsufficientCreditsPayload } from "@/lib/credits/constants";
+import { isAiActionError } from "@/lib/ai/action-result";
 import { ArrowLeft, Save, Sparkles, AlertCircle, Check, Eye, Target, MapPin, Heart, Lightbulb } from "lucide-react";
 
 // Types derived from schema/usage
@@ -67,6 +68,7 @@ export default function SceneEditor({
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isAddingScene, setIsAddingScene] = useState(false);
   const [feedback, setFeedback] = useState<any>(scene.lastFeedback);
@@ -138,6 +140,7 @@ export default function SceneEditor({
 
   const handleGenerateDraft = async () => {
     setIsGenerating(true);
+    setGenerationError(null);
     try {
       const draft = await generateSceneDraftAction({
         movieTimeAction: getAction(),
@@ -148,6 +151,10 @@ export default function SceneEditor({
 
       if (isInsufficientCreditsPayload(draft)) {
         router.push(INSUFFICIENT_CREDITS_PATH);
+        return;
+      }
+      if (isAiActionError(draft)) {
+        setGenerationError(draft.error);
         return;
       }
       
@@ -162,7 +169,7 @@ export default function SceneEditor({
             : typeof error === "object" && error !== null && "message" in error
               ? String((error as { message?: unknown }).message || "")
               : "Failed to generate draft. Please try again.";
-      alert(message);
+      setGenerationError(message || "Failed to generate draft. Please try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -480,7 +487,12 @@ export default function SceneEditor({
                     </div>
                 </section>
 
-                <div className="flex justify-center pt-8">
+                <div className="flex flex-col items-center gap-3 pt-8">
+                    {generationError ? (
+                      <p className="max-w-lg text-center text-sm text-red-600 dark:text-red-400">
+                        {generationError}
+                      </p>
+                    ) : null}
                     <button 
                         onClick={handleGenerateDraft}
                         disabled={isGenerating}

@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { INSUFFICIENT_CREDITS_PATH, isInsufficientCreditsPayload } from "@/lib/credits/constants";
+import { isAiActionError } from "@/lib/ai/action-result";
 import { saveStoryDraft, generateDraftAction, improveTextAction, recordExport } from "./actions";
 import { exportStory as exportFile } from "@/lib/export";
 
@@ -48,6 +49,12 @@ export function ReviewProvider({
             if (isInsufficientCreditsPayload(draft)) {
                 router.push(INSUFFICIENT_CREDITS_PATH);
                 return;
+            }
+            if (isAiActionError(draft)) {
+                throw new Error(draft.error);
+            }
+            if (typeof draft !== "string") {
+                throw new Error("Failed to generate draft. Please try again.");
             }
             // Replace content entirely
             setDraftContent(draft);

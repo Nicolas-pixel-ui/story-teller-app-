@@ -8,6 +8,8 @@ import { stories } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import StructureSelectorScreen from "./_components/StructureSelectorScreen";
 
+export const maxDuration = 60;
+
 async function getStory(storyId: string) {
   const supabase = await createClient();
   const {

@@ -21,8 +21,8 @@ export default function ProtectedError({
           Something went wrong
         </h1>
         <p className="text-sm text-brand-ink/80 dark:text-brand-seafoam">
-          The app hit a server error while loading this page. This is often caused by a missing
-          database URL on Vercel (<code className="text-xs">POOLING_DATABASE_URL</code>).
+          The app hit a server error while loading this page. If you were generating a story or
+          scene, the request may have timed out. You can try again, or go back to the dashboard.
         </p>
         {error.digest ? (
           <p className="text-xs text-brand-ink/60 dark:text-brand-seafoam/80">

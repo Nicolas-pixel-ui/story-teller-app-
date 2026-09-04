@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { INSUFFICIENT_CREDITS_PATH, isInsufficientCreditsPayload } from '@/lib/credits/constants';
+import { isAiActionError } from '@/lib/ai/action-result';
 import { rethrowIfRedirect } from '@/lib/navigation/redirect-error';
 import { StoryStructure } from '@/lib/data/structures';
 import { getBeatDraftAction } from '../actions';
@@ -87,6 +88,10 @@ export default function BeatByBeatEditor({ structure, storyContext, initialBeats
       );
       if (isInsufficientCreditsPayload(draft)) {
         router.push(INSUFFICIENT_CREDITS_PATH);
+        return;
+      }
+      if (isAiActionError(draft)) {
+        setError(draft.error);
         return;
       }
       if (!draft || typeof draft !== "string") {

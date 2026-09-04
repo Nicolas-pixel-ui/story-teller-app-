@@ -4,7 +4,7 @@ import { getStyleGuides } from "../style-guide/actions";
 import { selfReferencingCanonical } from "@/lib/seo/site-metadata";
 
 export const metadata = selfReferencingCanonical("/create-story");
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 export default async function CreateStoryPage() {
   const styleGuides = await getStyleGuides().catch(() => []); // Handle error gracefully

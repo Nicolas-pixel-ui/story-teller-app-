@@ -10,6 +10,8 @@ import {
   consumeCredit,
 } from "@/lib/credits/service";
 import { creditGate, type InsufficientCreditsResponse } from "@/lib/credits/redirect";
+import { withTimeout } from "@/lib/ai/action-result";
+import { userFriendlyAiError } from "@/lib/ai/gemini-generate";
 
 type CreateSceneSeed = {
   actionWhere?: string;
@@ -93,38 +95,68 @@ export async function deleteScene(sceneId: string, storyId: string) {
 export async function generateSceneDraftAction(
   sceneData: any,
   storyId: string
-): Promise<string | InsufficientCreditsResponse> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Unauthorized");
+): Promise<string | InsufficientCreditsResponse | { error: string }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { error: "Please sign in and try again." };
 
-  const [story] = await db
-    .select()
-    .from(stories)
-    .where(and(eq(stories.id, storyId), eq(stories.userId, user.id)));
+    let storyContext = {
+      storyType: "General Fiction",
+      overallStakes: "The outcome of this scene",
+      theme: "Transformation",
+    };
 
-  if (!story) throw new Error("Story not found");
+    try {
+      const [story] = await withTimeout(
+        db
+          .select()
+          .from(stories)
+          .where(and(eq(stories.id, storyId), eq(stories.userId, user.id)))
+          .limit(1)
+          .then((rows) => rows),
+        3000,
+        "story lookup timed out"
+      );
+      if (story) {
+        storyContext = {
+          storyType: (story.storyType as { name?: string } | null)?.name || "General Fiction",
+          overallStakes: (story.hooks as { selected?: { whyItWorks?: string } } | null)?.selected?.whyItWorks || "The outcome of this scene",
+          theme: "Transformation",
+        };
+      }
+    } catch (error) {
+      console.warn("[scene_generate] Story lookup failed, using defaults:", error);
+    }
 
-  const blocked = creditGate(
-    await consumeCredit({
-      userId: user.id,
-      reason: "scene_generate",
-      requestId:
-        typeof sceneData?.requestId === "string" ? sceneData.requestId : undefined,
-      metadata: { storyId },
-    })
-  );
-  if (blocked) return blocked;
+    try {
+      const blocked = creditGate(
+        await withTimeout(
+          consumeCredit({
+            userId: user.id,
+            reason: "scene_generate",
+            requestId:
+              typeof sceneData?.requestId === "string" ? sceneData.requestId : undefined,
+            metadata: { storyId },
+          }),
+          3000,
+          "credit debit timed out"
+        )
+      );
+      if (blocked) return blocked;
+    } catch (error) {
+      console.warn("[scene_generate] Credit debit failed, continuing:", error);
+    }
 
-  const storyContext = {
-    storyType: (story.storyType as any)?.name || "General Fiction",
-    overallStakes: (story.hooks as any)?.selected?.whyItWorks || "Survival",
-    theme: "Transformation",
-  };
-
-  return await generateSceneDraft(sceneData, storyContext);
+    return await generateSceneDraft(sceneData, storyContext);
+  } catch (error) {
+    console.error("[scene_generate] Failed:", error);
+    return {
+      error: userFriendlyAiError(error instanceof Error ? error.message : String(error)),
+    };
+  }
 }
 
 export async function analyzeShowDontTellAction(content: string) {

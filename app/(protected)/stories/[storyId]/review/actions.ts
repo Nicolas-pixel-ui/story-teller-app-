@@ -10,6 +10,8 @@ import {
   consumeCredit,
 } from "@/lib/credits/service";
 import { creditGate, type InsufficientCreditsResponse } from "@/lib/credits/redirect";
+import { withTimeout } from "@/lib/ai/action-result";
+import { userFriendlyAiError } from "@/lib/ai/gemini-generate";
 
 export async function getReviewData(storyId: string) {
   const supabase = await createClient();
@@ -177,47 +179,67 @@ export async function recordExport(storyId: string, format: string) {
 export async function generateDraftAction(
   storyId: string,
   options: any
-): Promise<string | InsufficientCreditsResponse> {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+): Promise<string | InsufficientCreditsResponse | { error: string }> {
+    try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) throw new Error("Unauthorized");
+        if (!user) return { error: "Please sign in and try again." };
 
-    // Update language if provided
-    if (options.language) {
-        await db.update(stories)
-            .set({ language: options.language })
-            .where(and(eq(stories.id, storyId), eq(stories.userId, user.id)));
+        if (options.language) {
+            try {
+                await withTimeout(
+                    db.update(stories)
+                        .set({ language: options.language })
+                        .where(and(eq(stories.id, storyId), eq(stories.userId, user.id))),
+                    3000,
+                    "language update timed out"
+                );
+            } catch (error) {
+                console.warn("[story_draft] Language update failed:", error);
+            }
+        }
+
+        const { story, scenes } = await getReviewData(storyId);
+
+        if (!options?.useFallback) {
+            try {
+                const creditResult = await withTimeout(
+                    consumeCredit({
+                        userId: user.id,
+                        reason: "story_draft_generate",
+                        requestId: typeof options?.requestId === "string" ? options.requestId : undefined,
+                        metadata: { storyId }
+                    }),
+                    3000,
+                    "credit debit timed out"
+                );
+                const blocked = creditGate(creditResult);
+                if (blocked) return blocked;
+            } catch (error) {
+                console.warn("[story_draft] Credit debit failed, continuing:", error);
+            }
+        }
+
+        const storyData = {
+            title: story.title,
+            description: story.description || "",
+            hooks: story.hooks,
+            character: story.character,
+            structure: story.structure,
+            scenes: scenes,
+            moralData: story.moralData
+        };
+
+        return options.useFallback
+            ? generateFallbackFullDraft(storyData)
+            : await generateFullStoryDraft(storyData, options);
+    } catch (error) {
+        console.error("[story_draft] Failed:", error);
+        return {
+            error: userFriendlyAiError(error instanceof Error ? error.message : String(error)),
+        };
     }
-
-    const { story, scenes } = await getReviewData(storyId);
-
-    if (!options?.useFallback) {
-        const creditResult = await consumeCredit({
-            userId: user.id,
-            reason: "story_draft_generate",
-            requestId: typeof options?.requestId === "string" ? options.requestId : undefined,
-            metadata: { storyId }
-        });
-        const blocked = creditGate(creditResult);
-        if (blocked) return blocked;
-    }
-    
-    const storyData = {
-        title: story.title,
-        description: story.description || "",
-        hooks: story.hooks,
-        character: story.character,
-        structure: story.structure,
-        scenes: scenes,
-        moralData: story.moralData
-    };
-
-    const draft = options.useFallback
-        ? generateFallbackFullDraft(storyData)
-        : await generateFullStoryDraft(storyData, options);
-    
-    return draft;
 }
 
 export async function improveTextAction(text: string, type: "rewrite" | "expand" | "shorten" | "grammar") {

@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateGeminiText, geminiModelCandidates, userFriendlyAiError } from "@/lib/ai/gemini-generate";
 
 const apiKey = process.env.GEMINI_API_KEY;
 // Use a specific model version to avoid 404s with generic alias
@@ -13,21 +14,14 @@ if (!apiKey) {
 const genAI = new GoogleGenerativeAI(apiKey || "");
 
 export async function generateStory(title: string, description: string, language: string = "en"): Promise<string> {
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not configured");
-  }
+  const langMap: Record<string, string> = {
+      'de': 'German',
+      'th': 'Thai',
+      'en': 'English'
+  };
+  const targetLang = langMap[language] || 'English';
 
-  try {
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-
-    const langMap: Record<string, string> = {
-        'de': 'German',
-        'th': 'Thai',
-        'en': 'English'
-    };
-    const targetLang = langMap[language] || 'English';
-
-    const prompt = `You are a creative story teller. Write a compelling short story based on the following:
+  const prompt = `You are a creative story teller. Write a compelling short story based on the following:
     
     Title: ${title}
     Context/Description: ${description}
@@ -36,11 +30,8 @@ export async function generateStory(title: string, description: string, language
     IMPORTANT: Write the story in ${targetLang}.
     Please format the output as plain text with paragraphs.`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-    
-    return text;
+  try {
+    return await generateGeminiText(prompt, { timeoutMs: 25_000 });
   } catch (error) {
     console.error("Error generating story with Gemini:", error);
     // Fallback content so the app doesn't crash/fail for the user
@@ -314,13 +305,7 @@ export async function generateFullStoryDraft(
     language?: string;
   } = {}
 ): Promise<string> {
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not configured");
-  }
-
   try {
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-
     // Construct a comprehensive prompt
     let prompt = `You are a professional novelist. Write a full draft of a short story based on the following detailed outline.\n\n`;
     
@@ -383,15 +368,9 @@ export async function generateFullStoryDraft(
     prompt += `5. CRITICAL: Write the story in ${targetLang}.\n`;
     prompt += `6. CRITICAL: Output the story in semantic HTML format (e.g., <h1>Title</h1>, <h2>Chapter X</h2>, <p>Paragraph...</p>). Do not use Markdown.\n`;
 
-    const result = await retryWithBackoff(async () => {
-      console.log("Calling Gemini for full story draft...");
-      const genResult = await model.generateContent(prompt);
-      const response = await genResult.response;
-      return response.text();
-    });
+    const result = await generateGeminiText(prompt, { timeoutMs: 40_000 });
 
     console.log("Draft generation successful, length:", result.length);
-    // Strip markdown code blocks if AI returns them despite instructions
     return result.replace(/```html/g, '').replace(/```/g, '');
   } catch (error) {
     console.error("Error generating full draft with Gemini:", error);
@@ -404,8 +383,7 @@ export async function generateFullStoryDraft(
       throw new Error("AI Service is busy (Rate Limit). Please try again in a moment.");
     }
 
-    // Throw error so UI can display it without overwriting draft
-    throw new Error(`Failed to generate draft: ${message}`);
+    throw new Error(userFriendlyAiError(message));
   }
 }
 
@@ -437,36 +415,33 @@ export async function improveText(text: string, type: "rewrite" | "expand" | "sh
 }
 
 export async function generateSceneDraft(sceneData: any, storyContext: any): Promise<string> {
-    if (!apiKey) {
-      throw new Error("GEMINI_API_KEY is not configured");
-    }
-  
-    try {
-      const modelCandidates = [SCENE_MODEL_NAME, MODEL_NAME];
-  
-      const prompt = `You are a creative writing assistant helping to develop a scene for a story.
+    const action = sceneData?.movieTimeAction || {};
+    const emotion = sceneData?.movieTimeEmotion || {};
+    const meaning = sceneData?.movieTimeMeaning || {};
+
+    const prompt = `You are a creative writing assistant helping to develop a scene for a story.
   
   STORY CONTEXT:
-  - Story Type: ${storyContext.storyType}
-  - Overall Stakes: ${storyContext.overallStakes}
-  - Theme: ${storyContext.theme}
+  - Story Type: ${storyContext?.storyType || "General Fiction"}
+  - Overall Stakes: ${storyContext?.overallStakes || "The outcome of this scene"}
+  - Theme: ${storyContext?.theme || "Transformation"}
   
   SCENE FRAMEWORK (Movie Time):
   
   ACTION:
-  - Where: ${sceneData.movieTimeAction.where}
-  - What's happening: ${sceneData.movieTimeAction.what}
-  - What happens next: ${sceneData.movieTimeAction.next}
+  - Where: ${action.where || "an unspecified location"}
+  - What's happening: ${action.what || "the next story beat"}
+  - What happens next: ${action.next || "the scene continues"}
   
   EMOTION:
-  - Characters involved: ${sceneData.movieTimeEmotion.characters}
-  - Stakes: ${sceneData.movieTimeEmotion.stakes}
-  - Tone: ${sceneData.movieTimeEmotion.tone}
+  - Characters involved: ${emotion.characters || "the main characters"}
+  - Stakes: ${emotion.stakes || "what they stand to lose"}
+  - Tone: ${emotion.tone || "neutral"}
   
   MEANING:
-  - What changed: ${sceneData.movieTimeMeaning.change}
-  - Why it matters: ${sceneData.movieTimeMeaning.significance}
-  - Takeaway: ${sceneData.movieTimeMeaning.takeaway}
+  - What changed: ${meaning.change || "something important shifted"}
+  - Why it matters: ${meaning.significance || meaning.takeaway || "it moves the story forward"}
+  - Takeaway: ${meaning.takeaway || "the character learns something"}
   
   Generate a vivid, engaging scene (300-500 words) that:
   1. Shows concrete visual action (don't just tell)
@@ -475,52 +450,17 @@ export async function generateSceneDraft(sceneData: any, storyContext: any): Pro
   4. Uses sensory details appropriate to the location
   5. Maintains the specified emotional tone
   
-  Write in a style suitable for a ${storyContext.storyType}. Output ONLY the scene text in Markdown.`;
-  
-      let lastError: unknown = null;
+  Write in a style suitable for a ${storyContext?.storyType || "story"}. Output ONLY the scene text in Markdown.`;
 
-      for (const modelName of modelCandidates) {
-        try {
-          const model = genAI.getGenerativeModel({ model: modelName });
-          const text = await retryWithBackoff(async () => {
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            return response.text();
-          });
-
-          if (!text?.trim()) {
-            throw new Error("AI returned an empty scene draft");
-          }
-
-          return text;
-        } catch (err) {
-          lastError = err;
-          const msg = err instanceof Error ? err.message : String(err);
-          const recoverableModelError =
-            msg.includes("404") ||
-            msg.toLowerCase().includes("not found") ||
-            msg.toLowerCase().includes("unsupported") ||
-            msg.toLowerCase().includes("model");
-
-          if (!recoverableModelError) {
-            throw err;
-          }
-        }
-      }
-      
-      throw lastError instanceof Error
-        ? lastError
-        : new Error("No available Gemini model could generate a scene draft.");
+    try {
+      return await generateGeminiText(prompt, {
+        timeoutMs: 22_000,
+        models: geminiModelCandidates(SCENE_MODEL_NAME, MODEL_NAME),
+      });
     } catch (error) {
       console.error("Error generating scene draft with Gemini:", error);
       const message = error instanceof Error ? error.message : String(error);
-      if (message.includes("429") || message.toLowerCase().includes("quota")) {
-        throw new Error("AI service is busy right now (rate limit). Please try again in a moment.");
-      }
-      if (message.includes("GEMINI_API_KEY")) {
-        throw new Error("AI is not configured on the server (missing Gemini API key).");
-      }
-      throw new Error(`Failed to generate scene draft: ${message}`);
+      throw new Error(userFriendlyAiError(message));
     }
   }
   
@@ -706,16 +646,7 @@ export async function generateBeatDraft(
   storyContext: any,
   previousBeats: any[]
 ): Promise<string> {
-  const currentKey = process.env.GEMINI_API_KEY;
-  if (!currentKey) {
-    console.error("GEMINI_API_KEY is missing in server environment");
-    // Return fallback immediately if no key
-    return getFallbackBeatDraft(beat, storyContext);
-  }
-
   try {
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-
     const prompt = `You are a storytelling expert helping someone write a beat in their story.
 
     Structure: ${storyContext.structure?.name || 'Unknown'}
@@ -743,42 +674,21 @@ export async function generateBeatDraft(
 
     Return only the draft text, no explanation.`;
 
-    // Wrap the API call in retry logic
-    const text = await retryWithBackoff(async () => {
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        return response.text();
-    });
-    
-    if (!text) {
-        throw new Error("AI returned empty response");
-    }
-    
-    return text.trim();
+    return await generateGeminiText(prompt, { timeoutMs: 18_000 });
   } catch (error: any) {
     console.error("Detailed Error generating beat draft:", error);
-    // Extract meaningful error message from Google's SDK if possible
     const detailedMessage = error?.message || String(error);
-    
-    // Check for Rate Limit specifically to use fallback
-    if (detailedMessage.includes("429")) {
-        console.warn("Rate limit exceeded even after retries. Using fallback.");
+
+    if (detailedMessage.includes("429") || detailedMessage.includes("timed out") || detailedMessage.includes("500") || detailedMessage.includes("503") || detailedMessage.includes("fetch failed")) {
+        console.warn("Beat generation failed after retries. Using fallback.");
         return getFallbackBeatDraft(beat, storyContext);
     }
-    
-    if (detailedMessage.includes("API key not valid")) {
-        throw new Error("Invalid API Key provided to AI service.");
+
+    if (detailedMessage.includes("API key") || detailedMessage.includes("GEMINI_API_KEY")) {
+        return getFallbackBeatDraft(beat, storyContext);
     }
 
-    // For other errors, we might also want to fallback to avoid blocking the user completely
-    // but let's throw for now if it's not a rate limit issue, to help debugging other problems.
-    // Or simpler: just fallback for everything in production.
-    // Let's fallback for 500/503 too.
-    if (detailedMessage.includes("500") || detailedMessage.includes("503") || detailedMessage.includes("fetch failed")) {
-         return getFallbackBeatDraft(beat, storyContext);
-    }
-
-    throw new Error(`AI Generation Failed: ${detailedMessage}`);
+    throw new Error(userFriendlyAiError(detailedMessage));
   }
 }
 

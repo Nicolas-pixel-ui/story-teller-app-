@@ -10,6 +10,8 @@ import { eq, and } from "drizzle-orm";
 import { styleGuides } from "@/lib/db/schema";
 import { creditGate, redirectIfInsufficientCredits } from "@/lib/credits/redirect";
 import { consumeCredit } from "@/lib/credits/service";
+import { isNextRedirectError } from "@/lib/navigation/redirect-error";
+import { withTimeout } from "@/lib/ai/action-result";
 
 export async function generatePreviewHooksAction(
   title: string,
@@ -211,13 +213,24 @@ export async function createStoryAction(
     }
 
     // 3. Generate Story
-    const creditResult = await consumeCredit({
-      userId: user.id,
-      reason: "story_generate",
-      requestId: (formData.get("generationRequestId") as string | null) ?? undefined,
-      metadata: { title: title.trim() },
-    });
-    redirectIfInsufficientCredits(creditResult);
+    try {
+      const creditResult = await withTimeout(
+        consumeCredit({
+          userId: user.id,
+          reason: "story_generate",
+          requestId: (formData.get("generationRequestId") as string | null) ?? undefined,
+          metadata: { title: title.trim() },
+        }),
+        4000,
+        "credit debit timed out"
+      );
+      redirectIfInsufficientCredits(creditResult);
+    } catch (error) {
+      if (isNextRedirectError(error)) {
+        throw error;
+      }
+      console.warn("[story_generate] Credit debit failed, continuing:", error);
+    }
 
     const generatedStory = await generateStory(title, promptContext, language);
 
@@ -277,7 +290,7 @@ export async function createStoryAction(
 
     redirect(`/stories/${newStory.id}`); // Redirect to the new story page
   } catch (error) {
-    if ((error as any).digest?.startsWith('NEXT_REDIRECT')) {
+    if (isNextRedirectError(error)) {
         throw error;
     }
 

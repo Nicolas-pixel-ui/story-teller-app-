@@ -5,6 +5,8 @@ import { getReviewData } from "./actions";
 import { ReviewProvider } from "./review-context";
 import { ReviewDashboard } from "./review-dashboard";
 
+export const maxDuration = 60;
+
 export async function generateMetadata({
   params,
 }: {

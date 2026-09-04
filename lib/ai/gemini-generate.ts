@@ -136,12 +136,18 @@ export async function generateGeminiText(
 
   const models = (options?.models?.length ? options.models : geminiModelCandidates()).slice(0, 3);
   const timeoutMs = options?.timeoutMs ?? 20_000;
+  const startedAt = Date.now();
   let lastError: unknown = null;
 
   for (const modelName of models) {
+    const remainingMs = timeoutMs - (Date.now() - startedAt);
+    if (remainingMs < 1500) {
+      lastError = lastError ?? new Error("AI generation timed out");
+      break;
+    }
     try {
       const text = await generateWithGeminiRest(modelName, prompt, apiKey, {
-        timeoutMs,
+        timeoutMs: remainingMs,
         json: options?.json,
       });
       console.info(`[gemini_generate] Used model ${modelName}`);

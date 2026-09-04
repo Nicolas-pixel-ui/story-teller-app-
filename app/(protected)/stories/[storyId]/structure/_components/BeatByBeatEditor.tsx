@@ -99,6 +99,7 @@ export default function BeatByBeatEditor({ structure, storyContext, initialBeats
         throw new Error("No draft returned from AI service");
       }
       handleContentChange(draft);
+      router.refresh();
     } catch (err: unknown) {
       rethrowIfRedirect(err);
       console.error("Failed to generate draft", err);
@@ -211,6 +212,7 @@ export default function BeatByBeatEditor({ structure, storyContext, initialBeats
                    type="button"
                    onClick={handleGenerateDraft}
                    disabled={isGenerating}
+                   title="Uses 10 credits"
                    className={`${brandInkButtonClassName} w-full px-5 py-3.5 text-base font-bold shadow-md disabled:opacity-50 disabled:cursor-not-allowed`}
                    style={brandInkButtonStyle}
                  >
@@ -223,6 +225,7 @@ export default function BeatByBeatEditor({ structure, storyContext, initialBeats
                      <>
                        <Sparkles className="h-5 w-5" />
                        Generate AI Draft
+                       <span className="text-sm font-semibold opacity-90">−10 credits</span>
                      </>
                    )}
                  </button>

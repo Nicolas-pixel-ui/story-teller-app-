@@ -6,11 +6,14 @@ import { stories } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { generateHooks, refineHook } from "@/lib/ai/story-generator";
 import { revalidatePath } from "next/cache";
+import { CREDIT_DEBIT_FAILED_MESSAGE } from "@/lib/credits/constants";
+import { creditGate, type InsufficientCreditsResponse } from "@/lib/credits/redirect";
+import { consumeCredit } from "@/lib/credits/service";
 
 export async function generateHooksAction(
   storyId: string,
   selectedTypes: string[]
-) {
+): Promise<{ success: true } | { error: string } | InsufficientCreditsResponse> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -29,6 +32,20 @@ export async function generateHooksAction(
 
   if (!story) {
     throw new Error("Story not found");
+  }
+
+  try {
+    const blocked = creditGate(
+      await consumeCredit({
+        userId: user.id,
+        reason: "hook_preview",
+        metadata: { storyId },
+      })
+    );
+    if (blocked) return blocked;
+  } catch (error) {
+    console.error("[hook_preview] Credit debit failed:", error);
+    return { error: CREDIT_DEBIT_FAILED_MESSAGE };
   }
 
   try {
@@ -165,7 +182,7 @@ export async function refineHookAction(
   storyId: string,
   hookText: string,
   refinementType: string
-) {
+): Promise<{ success: true; refinedText: string } | { error: string } | InsufficientCreditsResponse> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -183,6 +200,20 @@ export async function refineHookAction(
 
   if (!story) {
     throw new Error("Story not found");
+  }
+
+  try {
+    const blocked = creditGate(
+      await consumeCredit({
+        userId: user.id,
+        reason: "hook_refine",
+        metadata: { storyId, refinementType },
+      })
+    );
+    if (blocked) return blocked;
+  } catch (error) {
+    console.error("[hook_refine] Credit debit failed:", error);
+    return { error: CREDIT_DEBIT_FAILED_MESSAGE };
   }
 
   try {

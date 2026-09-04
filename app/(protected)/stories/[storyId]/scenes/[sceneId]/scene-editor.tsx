@@ -160,6 +160,7 @@ export default function SceneEditor({
       
       handleUpdate({ sceneContent: draft, completenessStatus: 'drafted' });
       setActiveTab('draft');
+      router.refresh();
     } catch (error) {
       const message =
         error instanceof Error

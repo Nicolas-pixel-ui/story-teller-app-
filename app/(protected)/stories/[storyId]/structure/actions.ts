@@ -11,9 +11,9 @@ import {
   generateStructureOutline,
 } from "@/lib/ai/story-generator";
 import { structureDefinitions } from "@/lib/data/structures";
+import { CREDIT_DEBIT_FAILED_MESSAGE } from "@/lib/credits/constants";
 import { creditGate, type InsufficientCreditsResponse } from "@/lib/credits/redirect";
 import { consumeCredit } from "@/lib/credits/service";
-import { withTimeout } from "@/lib/ai/action-result";
 import { userFriendlyAiError } from "@/lib/ai/gemini-generate";
 
 async function requireUserId() {
@@ -76,20 +76,17 @@ export async function getBeatDraftAction(
     const userId = await requireUserId();
     try {
       const blocked = creditGate(
-        await withTimeout(
-          consumeCredit({
-            userId,
-            reason: "structure_beat_draft",
-            requestId,
-            metadata: { beatId: beat?.id ?? null, storyId: storyContext?.id ?? null },
-          }),
-          3000,
-          "credit debit timed out"
-        )
+        await consumeCredit({
+          userId,
+          reason: "structure_beat_draft",
+          requestId,
+          metadata: { beatId: beat?.id ?? null, storyId: storyContext?.id ?? null },
+        })
       );
       if (blocked) return blocked;
     } catch (error) {
-      console.warn("[beat_draft] Credit debit failed, continuing:", error);
+      console.error("[beat_draft] Credit debit failed:", error);
+      return { error: CREDIT_DEBIT_FAILED_MESSAGE };
     }
 
     return await generateBeatDraft(beat, storyContext, previousBeats);

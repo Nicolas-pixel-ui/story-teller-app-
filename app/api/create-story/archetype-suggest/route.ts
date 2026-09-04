@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { CREDIT_DEBIT_FAILED_MESSAGE } from "@/lib/credits/constants";
 import { creditGate } from "@/lib/credits/redirect";
 import { consumeCredit } from "@/lib/credits/service";
 import {
@@ -35,26 +36,27 @@ export async function POST(request: Request) {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (user) {
-        const requestId = typeof body.requestId === "string" ? body.requestId : undefined;
-        const creditResult = await Promise.race([
-          consumeCredit({
-            userId: user.id,
-            reason: "archetype_suggest",
-            requestId,
-            metadata: { storyType: context.storyType ?? null },
-          }),
-          new Promise<never>((_, reject) => {
-            setTimeout(() => reject(new Error("credit debit timed out")), 2000);
-          }),
-        ]);
-        const blocked = creditGate(creditResult);
-        if (blocked) {
-          return NextResponse.json(blocked, { status: 402 });
-        }
+      if (!user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const requestId = typeof body.requestId === "string" ? body.requestId : undefined;
+      const creditResult = await consumeCredit({
+        userId: user.id,
+        reason: "archetype_suggest",
+        requestId,
+        metadata: { storyType: context.storyType ?? null },
+      });
+      const blocked = creditGate(creditResult);
+      if (blocked) {
+        return NextResponse.json(blocked, { status: 402 });
       }
     } catch (error) {
-      console.warn("[archetype_suggest] Auth/credit lookup failed, continuing:", error);
+      console.error("[archetype_suggest] Auth/credit lookup failed:", error);
+      return NextResponse.json(
+        { error: CREDIT_DEBIT_FAILED_MESSAGE },
+        { status: 503 }
+      );
     }
 
     const suggestion = await generateArchetypeSuggestion(context);

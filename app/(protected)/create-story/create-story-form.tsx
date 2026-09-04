@@ -43,6 +43,7 @@ export default function CreateStoryForm({
   const [state, formAction, isPending] = useActionState(createStoryAction, { error: undefined });
   
   // Hook Generation State
+  const [generationRequestId] = useState(() => crypto.randomUUID());
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [language, setLanguage] = useState("en");
@@ -84,6 +85,7 @@ export default function CreateStoryForm({
       }
       if (result.hooks) {
         setGeneratedHooks(result.hooks);
+        router.refresh();
       } else if (result.error) {
         alert(result.error);
       }
@@ -164,6 +166,7 @@ export default function CreateStoryForm({
       <input type="hidden" name="mode" value={selectedMode} />
       <input type="hidden" name="language" value={language} />
       <input type="hidden" name="styleGuideId" value={selectedStyleGuideId} />
+      <input type="hidden" name="generationRequestId" value={generationRequestId} />
       {moralData && <input type="hidden" name="moralData" value={JSON.stringify(moralData)} />}
       {archetypeData && <input type="hidden" name="archetypeData" value={JSON.stringify(archetypeData)} />}
       {selectedHook && <input type="hidden" name="selectedHook" value={JSON.stringify(selectedHook)} />}
@@ -408,7 +411,7 @@ export default function CreateStoryForm({
                           {typeInfo?.name} Hooks
                         </h4>
                         <div className="space-y-3">
-                          {hooks.map((hook: any, idx: number) => {
+                          {Array.isArray(hooks) && hooks.map((hook: any, idx: number) => {
                             const isSelected = selectedHook?.text === hook.text;
                             return (
                               <div 

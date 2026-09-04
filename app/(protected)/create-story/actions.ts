@@ -10,6 +10,7 @@ import { eq, and } from "drizzle-orm";
 import { styleGuides } from "@/lib/db/schema";
 import { creditGate, redirectIfInsufficientCredits } from "@/lib/credits/redirect";
 import { consumeCredit } from "@/lib/credits/service";
+import { CREDIT_DEBIT_FAILED_MESSAGE } from "@/lib/credits/constants";
 import { isNextRedirectError } from "@/lib/navigation/redirect-error";
 import { withTimeout } from "@/lib/ai/action-result";
 
@@ -26,7 +27,7 @@ export async function generatePreviewHooksAction(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    throw new Error("Unauthorized");
+    return { error: "Unauthorized" };
   }
 
   try {
@@ -38,7 +39,11 @@ export async function generatePreviewHooksAction(
     const blocked = creditGate(creditResult);
     if (blocked) return blocked;
 
-    const generatedData = await generateHooks(title, description, selectedTypes, language);
+    const generatedData = await withTimeout(
+      generateHooks(title, description, selectedTypes, language),
+      20_000,
+      "hook generation timed out"
+    );
     return { hooks: generatedData.hooks };
   } catch (error) {
     console.error("Error generating preview hooks:", error);
@@ -212,48 +217,77 @@ export async function createStoryAction(
       }
     }
 
-    // 3. Generate Story
+    // 3. Debit 10 credits, save the story, then optionally generate AI text.
     try {
-      const creditResult = await withTimeout(
-        consumeCredit({
-          userId: user.id,
-          reason: "story_generate",
-          requestId: (formData.get("generationRequestId") as string | null) ?? undefined,
-          metadata: { title: title.trim() },
-        }),
-        4000,
-        "credit debit timed out"
-      );
+      const creditResult = await consumeCredit({
+        userId: user.id,
+        reason: "story_generate",
+        requestId: (formData.get("generationRequestId") as string | null) ?? undefined,
+        metadata: { title: title.trim() },
+      });
       redirectIfInsufficientCredits(creditResult);
     } catch (error) {
       if (isNextRedirectError(error)) {
         throw error;
       }
-      console.warn("[story_generate] Credit debit failed, continuing:", error);
+      console.error("[story_generate] Credit debit failed:", error);
+      return { error: CREDIT_DEBIT_FAILED_MESSAGE };
     }
 
-    const generatedStory = await generateStory(title, promptContext, language);
+    // Save the story first so Create Story does not depend on a slow Gemini call.
+    const storyId = crypto.randomUUID();
+    const userDescription = (description || "").trim();
 
-    // 4. Save to DB
-    const [newStory] = await db.insert(stories).values({
-      id: crypto.randomUUID(),
-      userId: user.id,
-      title: title.trim(),
-      description: generatedStory,
-      language: language,
-      stylePreferences,
-      styleGuideId: styleGuideId || null,
-      storyType: storyTypeObject,
-      hooks: hooksData,
-      mode: mode || "quick",
-      moralData: moralData || {},
-      moralConflictPrimary: moralData?.primary,
-      moralConflictSecondary: moralData?.secondary,
-      moralComplexity: moralData?.complexity,
-      character: archetypeData,
-      structure: structureData || {},
-      // illustrations field removed temporarily due to db migration issue
-    }).returning();
+    const [newStory] = await withTimeout(
+      db.insert(stories).values({
+        id: storyId,
+        userId: user.id,
+        title: title.trim(),
+        description: userDescription || null,
+        language: language,
+        stylePreferences,
+        styleGuideId: styleGuideId || null,
+        storyType: storyTypeObject,
+        hooks: hooksData,
+        mode: mode || "quick",
+        moralData: moralData || {},
+        moralConflictPrimary: moralData?.primary,
+        moralConflictSecondary: moralData?.secondary,
+        moralComplexity: moralData?.complexity,
+        character: archetypeData,
+        structure: structureData || {},
+      }).returning(),
+      8000,
+      "Saving the story timed out"
+    );
+
+    if (!newStory?.id) {
+      return { error: "Failed to save story. Please try again." };
+    }
+
+    try {
+      const generatedStory = await withTimeout(
+        generateStory(title, promptContext, language, userDescription),
+        8_000,
+        "story generation timed out"
+      );
+      const generated = (generatedStory || "").trim();
+      if (generated && generated !== userDescription && generated !== promptContext) {
+        await withTimeout(
+          db
+            .update(stories)
+            .set({
+              description: generated,
+              updatedAt: new Date(),
+            })
+            .where(eq(stories.id, storyId)),
+          5000,
+          "Updating generated story timed out"
+        );
+      }
+    } catch (genError) {
+      console.warn("[story_generate] AI generation skipped, story was still saved:", genError);
+    }
 
     // Update user preference for default mode
     if (mode) {

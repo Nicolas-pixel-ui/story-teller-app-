@@ -33,7 +33,7 @@ export async function loadSettingsPageData(
         .from(creditTransactions)
         .where(eq(creditTransactions.userId, userId))
         .orderBy(desc(creditTransactions.createdAt))
-        .limit(8);
+        .limit(20);
 
       return rows.map((tx) => ({
         id: tx.id,

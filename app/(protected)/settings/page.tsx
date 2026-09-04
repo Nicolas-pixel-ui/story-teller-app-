@@ -14,9 +14,10 @@ import {
 import ProfileForm from "./profile-form";
 import { revalidatePath } from "next/cache";
 import AdminGrantCreditsForm from "./admin-grant-credits-form";
+import { creditReasonLabel } from "@/lib/credits/constants";
+import { CREDITS_PER_AI_USE, DAILY_FREE_QUOTA } from "@/lib/credits/service";
 
 export const metadata = selfReferencingCanonical("/settings");
-const DAILY_FREE_QUOTA = 140;
 const CREDIT_ADMIN_OWNER_EMAIL = "nicolas@hartmanns.net";
 
 async function updateProfileAction(previousState: { error?: string; success?: string } | null | void, formData: FormData) {
@@ -230,11 +231,13 @@ export default async function ProfilePage() {
           </div>
         </div>
 
-        <div className="mt-8 bg-white dark:bg-brand-ink/80 shadow rounded-lg overflow-hidden border border-brand-seafoam/30">
+        <div id="credits" className="mt-8 scroll-mt-24 bg-white dark:bg-brand-ink/80 shadow rounded-lg overflow-hidden border border-brand-seafoam/30">
           <div className="px-4 py-5 sm:px-6 border-b border-brand-seafoam/30">
             <h3 className="text-lg font-medium leading-6 text-brand-ink dark:text-brand-yellow">AI credits</h3>
             <p className="mt-1 text-sm text-brand-ink/80 dark:text-brand-seafoam">
-              You get 140 AI credits per day (UTC). Each AI generation uses 10 credits (up to 14 per day). When you run out, wait until tomorrow for a full refill.
+              You get {DAILY_FREE_QUOTA} AI credits per day (UTC). Each AI generation uses{" "}
+              <span className="font-semibold text-brand-ink dark:text-brand-yellow">{CREDITS_PER_AI_USE} credits</span>
+              {" "}(up to {Math.floor(DAILY_FREE_QUOTA / CREDITS_PER_AI_USE)} per day). Every use appears below as −{CREDITS_PER_AI_USE}. When you run out, wait until tomorrow for a full refill.
             </p>
           </div>
           <div className="px-4 py-5 sm:p-6 space-y-4">
@@ -243,30 +246,37 @@ export default async function ProfilePage() {
               <p className="mt-1 text-2xl font-semibold text-brand-ink dark:text-brand-yellow">
                 {creditBalance}/{DAILY_FREE_QUOTA}
               </p>
+              <p className="mt-1 text-xs text-brand-ink/70 dark:text-brand-seafoam">
+                Cost per AI generation: −{CREDITS_PER_AI_USE} credits
+              </p>
             </div>
 
             <div>
               <h4 className="text-sm font-medium text-brand-ink dark:text-brand-seafoam mb-2">Recent transactions</h4>
               {recentCreditTransactions.length === 0 ? (
-                <p className="text-sm text-brand-ink/80 dark:text-brand-seafoam">No credit transactions yet.</p>
+                <p className="text-sm text-brand-ink/80 dark:text-brand-seafoam">
+                  No credit transactions yet. The next AI generation will show here as −{CREDITS_PER_AI_USE} credits.
+                </p>
               ) : (
                 <div className="divide-y divide-brand-seafoam/30 rounded-md border border-brand-seafoam/30">
                   {recentCreditTransactions.map((tx) => (
                     <div key={tx.id} className="flex items-center justify-between px-3 py-2 text-sm">
                       <div className="min-w-0">
                         <p className="font-medium text-brand-ink dark:text-brand-seafoam">
-                          {tx.reason.replaceAll("_", " ")}
+                          {creditReasonLabel(tx.reason)}
                         </p>
                         <p className="text-xs text-brand-ink/80 dark:text-brand-seafoam">
                           {tx.createdAt ? new Date(tx.createdAt).toLocaleString() : "Unknown date"}
                         </p>
                       </div>
                       <span
-                        className={`ml-3 font-semibold ${
-                          tx.amount >= 0 ? "text-brand-teal dark:text-brand-yellow" : "text-brand-ink dark:text-brand-seafoam"
+                        className={`ml-3 shrink-0 font-semibold ${
+                          tx.amount >= 0
+                            ? "text-brand-teal dark:text-brand-yellow"
+                            : "text-brand-orange dark:text-brand-yellow"
                         }`}
                       >
-                        {tx.amount >= 0 ? `+${tx.amount}` : tx.amount}
+                        {tx.amount >= 0 ? `+${tx.amount}` : tx.amount} credits
                       </span>
                     </div>
                   ))}

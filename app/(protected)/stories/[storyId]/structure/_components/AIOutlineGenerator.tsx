@@ -28,6 +28,7 @@ export default function AIOutlineGenerator({ structure, storyContext, initialOut
       setOutline(generatedBeats);
       setHasGenerated(true);
       onSave({ generated: true, beats: generatedBeats, generatedAt: new Date().toISOString() });
+      router.refresh();
     } catch (error) {
       console.error("Failed to generate outline", error);
     } finally {

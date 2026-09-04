@@ -58,6 +58,7 @@ export function ReviewProvider({
             }
             // Replace content entirely
             setDraftContent(draft);
+            router.refresh();
             
             // Force a slight delay before saving to ensure state matches
             setTimeout(async () => {

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { hookTypes, HookTypeID } from "@/lib/data/hookTypes";
 import { generateHooksAction, saveSelectedHookAction, saveManualHookAction, refineHookAction } from "./actions";
 import { useRouter } from "next/navigation";
+import { INSUFFICIENT_CREDITS_PATH, isInsufficientCreditsPayload } from "@/lib/credits/constants";
 import { Loader2, Wand2, Check, X, Edit2, RotateCcw } from "lucide-react";
 
 interface GeneratedHook {
@@ -49,7 +50,15 @@ export default function StoryHooks({ storyId, existingHooks }: StoryHooksProps) 
 
     setIsGenerating(true);
     try {
-      await generateHooksAction(storyId, selectedTypes);
+      const result = await generateHooksAction(storyId, selectedTypes);
+      if (isInsufficientCreditsPayload(result)) {
+        router.push(INSUFFICIENT_CREDITS_PATH);
+        return;
+      }
+      if ("error" in result && result.error) {
+        alert(result.error);
+        return;
+      }
       router.refresh();
     } catch (error) {
       console.error("Failed to generate hooks", error);
@@ -125,8 +134,17 @@ export default function StoryHooks({ storyId, existingHooks }: StoryHooksProps) 
     setIsRefining(true);
     try {
       const result = await refineHookAction(storyId, editingText, refinementType);
+      if (isInsufficientCreditsPayload(result)) {
+        router.push(INSUFFICIENT_CREDITS_PATH);
+        return;
+      }
+      if ("error" in result && result.error) {
+        alert(result.error);
+        return;
+      }
       if (result.success && result.refinedText) {
         setEditingText(result.refinedText);
+        router.refresh();
       }
     } catch (error) {
       console.error("Failed to refine hook", error);

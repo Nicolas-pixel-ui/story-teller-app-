@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   consumeCredit,
 } from "@/lib/credits/service";
+import { CREDIT_DEBIT_FAILED_MESSAGE } from "@/lib/credits/constants";
 import { creditGate, type InsufficientCreditsResponse } from "@/lib/credits/redirect";
 import { withTimeout } from "@/lib/ai/action-result";
 import { userFriendlyAiError } from "@/lib/ai/gemini-generate";
@@ -133,21 +134,18 @@ export async function generateSceneDraftAction(
 
     try {
       const blocked = creditGate(
-        await withTimeout(
-          consumeCredit({
-            userId: user.id,
-            reason: "scene_generate",
-            requestId:
-              typeof sceneData?.requestId === "string" ? sceneData.requestId : undefined,
-            metadata: { storyId },
-          }),
-          3000,
-          "credit debit timed out"
-        )
+        await consumeCredit({
+          userId: user.id,
+          reason: "scene_generate",
+          requestId:
+            typeof sceneData?.requestId === "string" ? sceneData.requestId : undefined,
+          metadata: { storyId },
+        })
       );
       if (blocked) return blocked;
     } catch (error) {
-      console.warn("[scene_generate] Credit debit failed, continuing:", error);
+      console.error("[scene_generate] Credit debit failed:", error);
+      return { error: CREDIT_DEBIT_FAILED_MESSAGE };
     }
 
     return await generateSceneDraft(sceneData, storyContext);

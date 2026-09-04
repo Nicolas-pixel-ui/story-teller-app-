@@ -9,6 +9,7 @@ import { providerRouter } from "@/lib/ai/image-providers/router";
 import {
   consumeCredit,
 } from "@/lib/credits/service";
+import { CREDIT_DEBIT_FAILED_MESSAGE } from "@/lib/credits/constants";
 import { creditGate, type InsufficientCreditsResponse } from "@/lib/credits/redirect";
 import { withTimeout } from "@/lib/ai/action-result";
 import { userFriendlyAiError } from "@/lib/ai/gemini-generate";
@@ -204,20 +205,17 @@ export async function generateDraftAction(
 
         if (!options?.useFallback) {
             try {
-                const creditResult = await withTimeout(
-                    consumeCredit({
-                        userId: user.id,
-                        reason: "story_draft_generate",
-                        requestId: typeof options?.requestId === "string" ? options.requestId : undefined,
-                        metadata: { storyId }
-                    }),
-                    3000,
-                    "credit debit timed out"
-                );
+                const creditResult = await consumeCredit({
+                    userId: user.id,
+                    reason: "story_draft_generate",
+                    requestId: typeof options?.requestId === "string" ? options.requestId : undefined,
+                    metadata: { storyId }
+                });
                 const blocked = creditGate(creditResult);
                 if (blocked) return blocked;
             } catch (error) {
-                console.warn("[story_draft] Credit debit failed, continuing:", error);
+                console.error("[story_draft] Credit debit failed:", error);
+                return { error: CREDIT_DEBIT_FAILED_MESSAGE };
             }
         }
 

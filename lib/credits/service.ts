@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { and, eq, lt, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { creditTransactions, userCredits } from "@/lib/db/schema";
@@ -25,6 +26,7 @@ export type CreditConsumeReason =
   | "scene_generate"
   | "archetype_suggest"
   | "hook_preview"
+  | "hook_refine"
   | "structure_beat_draft"
   | "structure_outline"
   | "structure_recommend"
@@ -225,34 +227,57 @@ async function consumeCreditViaSupabase(input: ConsumeCreditInput): Promise<Cons
   };
 }
 
+function withDeadline<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
+}
+
+function revalidateCreditViews() {
+  try {
+    revalidatePath("/settings");
+    revalidatePath("/", "layout");
+  } catch {
+    // Scripts and tests may call this outside a Next.js request.
+  }
+}
+
 export async function consumeCredit(input: ConsumeCreditInput): Promise<ConsumeCreditResult> {
   const { userId, requestId } = input;
+  let result: ConsumeCreditResult;
 
   try {
-    return await consumeCreditViaPostgres(input);
+    result = await withDeadline(
+      consumeCreditViaPostgres(input),
+      5000,
+      "credit debit timed out"
+    );
   } catch (error) {
     if (requestId && error instanceof Error && /credit_transactions_request_id_unique/i.test(error.message)) {
       const balance = await getUserCreditBalance(userId);
-      return { ok: true, balance, alreadyConsumed: true };
+      result = { ok: true, balance, alreadyConsumed: true };
+    } else {
+      try {
+        result = await consumeCreditViaSupabase(input);
+      } catch (supabaseError) {
+        console.error("[credits] Debit failed via Postgres and Supabase", error, supabaseError);
+        throw supabaseError;
+      }
     }
-
-    if (isDirectPostgresConnectionError(error)) {
-      return consumeCreditViaSupabase(input);
-    }
-
-    const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
-    if (
-      message.includes("password authentication") ||
-      message.includes("failed query") ||
-      message.includes("connect_timeout") ||
-      message.includes("econnrefused") ||
-      message.includes("database_not_configured")
-    ) {
-      return consumeCreditViaSupabase(input);
-    }
-
-    throw error;
   }
+
+  revalidateCreditViews();
+  return result;
 }
 
 export async function adminGrantCredits(

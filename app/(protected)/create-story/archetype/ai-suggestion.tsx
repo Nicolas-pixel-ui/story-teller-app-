@@ -55,6 +55,7 @@ export function AIArchetypeSuggestion({
 
         if (payload.suggestion?.primaryRecommendation) {
           setSuggestion(payload.suggestion);
+          router.refresh();
           return;
         }
 

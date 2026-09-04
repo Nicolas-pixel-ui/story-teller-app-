@@ -15,23 +15,13 @@ async function debitArchetypeCredit(
   requestId: string | undefined,
   storyType?: string
 ) {
-  try {
-    const creditResult = await Promise.race([
-      consumeCredit({
-        userId,
-        reason: "archetype_suggest",
-        requestId,
-        metadata: { storyType: storyType ?? null },
-      }),
-      new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("credit debit timed out")), 2500);
-      }),
-    ]);
-    return creditGate(creditResult);
-  } catch (error) {
-    console.warn("[archetype_suggest] Credit debit failed, continuing without charge:", error);
-    return null;
-  }
+  const creditResult = await consumeCredit({
+    userId,
+    reason: "archetype_suggest",
+    requestId,
+    metadata: { storyType: storyType ?? null },
+  });
+  return creditGate(creditResult);
 }
 
 export async function getAIArchetypeSuggestion(
@@ -44,10 +34,12 @@ export async function getAIArchetypeSuggestion(
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (user) {
-      const blocked = await debitArchetypeCredit(user.id, requestId, context.storyType);
-      if (blocked) return blocked;
+    if (!user) {
+      throw new Error("Unauthorized");
     }
+
+    const blocked = await debitArchetypeCredit(user.id, requestId, context.storyType);
+    if (blocked) return blocked;
 
     return await generateArchetypeSuggestion(context);
   } catch (error) {

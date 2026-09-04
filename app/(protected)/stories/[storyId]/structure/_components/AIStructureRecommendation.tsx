@@ -24,6 +24,7 @@ export default function AIStructureRecommendation({ storyContext, onSelectStruct
         return;
       }
       setRecommendation(rec);
+      router.refresh();
     } catch (error) {
       console.error("Failed to get recommendation", error);
     } finally {

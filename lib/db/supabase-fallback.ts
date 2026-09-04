@@ -194,7 +194,7 @@ export type CreditTransactionRow = {
 
 export async function getRecentCreditTransactionsViaSupabase(
   userId: string,
-  limit = 8
+  limit = 20
 ): Promise<CreditTransactionRow[]> {
   const supabase = await getSupabaseClientForUserData(userId);
   const { data, error } = await supabase

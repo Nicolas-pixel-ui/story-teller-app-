@@ -74,10 +74,13 @@ export async function SiteHeader() {
           </div>
           {user ? (
             <div className="flex items-center gap-3">
-              <span className="rounded-md border border-brand-seafoam/70 dark:border-brand-seafoam/40 bg-white/80 dark:bg-brand-ink/70 px-2.5 py-1 text-xs font-medium text-brand-ink dark:text-brand-seafoam">
+              <Link
+                href="/settings#credits"
+                className="rounded-md border border-brand-seafoam/70 dark:border-brand-seafoam/40 bg-white/80 dark:bg-brand-ink/70 px-2.5 py-1 text-xs font-medium text-brand-ink dark:text-brand-seafoam hover:border-brand-teal hover:text-brand-teal dark:hover:text-brand-yellow"
+              >
                 Credits: {creditBalance ?? "—"}/{DAILY_FREE_QUOTA}
-                <span className="sr-only"> ({CREDITS_PER_AI_USE} per AI use)</span>
-              </span>
+                <span className="sr-only"> ({CREDITS_PER_AI_USE} per AI use). Open credit history.</span>
+              </Link>
               <SignOutButton />
             </div>
           ) : null}

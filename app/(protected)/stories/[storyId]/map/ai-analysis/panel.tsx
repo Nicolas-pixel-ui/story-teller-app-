@@ -22,6 +22,7 @@ export function AIAnalysisPanel() {
         return;
       }
       setAnalysis(result);
+      router.refresh();
     });
   };
 

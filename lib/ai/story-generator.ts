@@ -13,13 +13,19 @@ if (!apiKey) {
 
 const genAI = new GoogleGenerativeAI(apiKey || "");
 
-export async function generateStory(title: string, description: string, language: string = "en"): Promise<string> {
+export async function generateStory(
+  title: string,
+  description: string,
+  language: string = "en",
+  fallbackText?: string
+): Promise<string> {
   const langMap: Record<string, string> = {
       'de': 'German',
       'th': 'Thai',
       'en': 'English'
   };
   const targetLang = langMap[language] || 'English';
+  const fallback = (fallbackText ?? description ?? "").trim();
 
   const prompt = `You are a creative story teller. Write a compelling short story based on the following:
     
@@ -31,12 +37,11 @@ export async function generateStory(title: string, description: string, language
     Please format the output as plain text with paragraphs.`;
 
   try {
-    return await generateGeminiText(prompt, { timeoutMs: 25_000 });
+    return await generateGeminiText(prompt, { timeoutMs: 8_000 });
   } catch (error) {
     console.error("Error generating story with Gemini:", error);
-    // Fallback content so the app doesn't crash/fail for the user
     console.warn("Returning original description as fallback.");
-    return description;
+    return fallback;
   }
 }
 
@@ -225,67 +230,108 @@ export async function suggestArchetype(
   }
 }
 
-// Fallback generator for full draft
+function cleanStoryDescription(description?: string): string {
+  if (!description) return "";
+  return description
+    .replace(/\[AI Generation Unavailable\]\s*/g, "")
+    .replace(/^Title: .*?(\n\n|\n)/, "")
+    .replace(/\(Note: The AI service is currently experiencing high traffic[\s\S]*\)/, "")
+    .replace(/\n\n(Story Type|Primary Archetype|Moral Conflict|IMPORTANT|Context):[\s\S]*/, "")
+    .trim();
+}
+
+function extractHookText(hooks: any): string {
+  if (!hooks) return "";
+  if (typeof hooks === "string") return hooks;
+  if (hooks.selected) return String(hooks.selected.text || hooks.selected);
+  if (hooks.chosen) return String(hooks.chosen.text || hooks.chosen);
+  if (Array.isArray(hooks)) {
+    const firstHook = hooks[0];
+    return typeof firstHook === "string" ? firstHook : String(firstHook?.text || "");
+  }
+  if (typeof hooks === "object") return String(hooks.text || "");
+  return "";
+}
+
+function extractCharacterName(character: any): string {
+  if (!character) return "TBD";
+  if (typeof character === "string") return character;
+  return (
+    character.name ||
+    character.characterName ||
+    character.protagonist ||
+    character.primary?.name ||
+    "TBD"
+  );
+}
+
+// Fallback generator for full draft (high-contrast HTML matching live AI format)
 export function generateFallbackFullDraft(storyData: any): string {
-  let draft = `<h1>${storyData.title}</h1>`;
-  
-  if (storyData.description) {
-    // Clean up if description contains previous error messages or metadata appended by creation process
-    const cleanDescription = storyData.description
-        .replace(/\[AI Generation Unavailable\]\s*/g, '')
-        .replace(/^Title: .*?(\n\n|\n)/, '')
-        .replace(/\(Note: The AI service is currently experiencing high traffic[\s\S]*\)/, '')
-        .replace(/\n\n(Story Type|Primary Archetype|Moral Conflict|IMPORTANT|Context):[\s\S]*/, '')
-        .trim();
-        
-    draft += `<p><em>${cleanDescription}</em></p><hr />`;
-  }
-  
-  draft += `<div style="padding: 1rem; background-color: #f3f4f6; border-radius: 0.5rem; margin-bottom: 2rem;">`;
-  draft += `<strong>⚠️ AI Service Unavailable - Offline Template</strong><br/>`;
-  draft += `Note: The AI service is currently experiencing high traffic. This template includes your story structure so you can start writing manually.`;
-  draft += `</div>`;
-  
-  // Hooks
-  if (storyData.hooks) {
-    let hookText = "";
-    if (typeof storyData.hooks === 'string') {
-        hookText = storyData.hooks;
-    } else if (storyData.hooks.selected) {
-        hookText = storyData.hooks.selected.text || storyData.hooks.selected;
-    } else if (storyData.hooks.chosen) {
-        hookText = storyData.hooks.chosen.text || storyData.hooks.chosen;
-    } else if (Array.isArray(storyData.hooks)) {
-         // Try to find the first valid hook in an array
-         const firstHook = storyData.hooks[0];
-         hookText = typeof firstHook === 'string' ? firstHook : (firstHook?.text || JSON.stringify(firstHook));
-    } else if (typeof storyData.hooks === 'object') {
-        hookText = storyData.hooks.text || "Hook content unavailable";
-    }
+  const cleanDescription = cleanStoryDescription(storyData.description);
+  const protagonist = extractCharacterName(storyData.character);
+  const conflict =
+    (typeof storyData.moralData === "string" && storyData.moralData) ||
+    storyData.moralData?.conflict ||
+    storyData.moralData?.theme ||
+    cleanDescription ||
+    "TBD";
+  const ending = "TBD — complete your scenes, then regenerate.";
+  const hookText = extractHookText(storyData.hooks);
 
-    if (hookText && hookText !== "undefined") {
-        draft += `<h2>Opening Hook</h2><p>${hookText}</p><hr />`;
-    }
+  let draft = `<hr><h3>🎬 FINAL STORY DRAFT</h3>`;
+  draft += `<ul>`;
+  draft += `<li><strong>Protagonist:</strong> ${protagonist}</li>`;
+  draft += `<li><strong>Core Conflict:</strong> ${conflict}</li>`;
+  draft += `<li><strong>Ending:</strong> ${ending}</li>`;
+  draft += `</ul><hr>`;
+
+  draft += `<p><strong>Offline template</strong></p>`;
+  draft += `<p>AI is unavailable right now. Use the sections below to draft manually, then regenerate when the service recovers.</p>`;
+
+  if (storyData.title) {
+    draft += `<p><strong>Title</strong></p><p>${storyData.title}</p>`;
+  }
+  if (cleanDescription) {
+    draft += `<p><strong>Premise</strong></p><p>${cleanDescription}</p>`;
+  }
+  if (hookText && hookText !== "undefined") {
+    draft += `<p><strong>Opening Hook</strong></p><p>${hookText}</p>`;
   }
 
-  // Add scenes
+  draft += `<p><strong>Act I: Setup</strong></p>`;
+  draft += `<p>[Establish the ordinary world and what your protagonist wants.]</p>`;
+
   if (storyData.scenes && storyData.scenes.length > 0) {
     storyData.scenes.forEach((scene: any, index: number) => {
-      draft += `<h2>Chapter ${index + 1}: ${scene.title || `Scene ${index + 1}`}</h2>`;
-      if (scene.description) draft += `<p><em>Context: ${scene.description}</em></p>`;
-      draft += `<p>[Start writing this scene here...]</p><br/><br/><hr />`;
+      const label =
+        index === 0
+          ? "Inciting Incident"
+          : index === storyData.scenes.length - 1
+            ? "Resolution"
+            : scene.title || `Scene ${index + 1}`;
+      draft += `<p><strong>${label}</strong></p>`;
+      if (scene.description) {
+        draft += `<p>${scene.description}</p>`;
+      }
+      draft += `<p>[Start writing this section here...]</p>`;
     });
-  } else if (storyData.structure && storyData.structure.beats) {
-     // Fallback to beats if no scenes
+  } else if (storyData.structure?.beats?.length) {
     storyData.structure.beats.forEach((beat: any, index: number) => {
-      draft += `<h2>Part ${index + 1}: ${beat.name || beat.title || `Beat ${index + 1}`}</h2>`;
-      if (beat.description) draft += `<p><em>Focus: ${beat.description}</em></p>`;
-      draft += `<p>[Start writing here...]</p><br/><br/><hr />`;
+      const name = beat.name || beat.title || `Beat ${index + 1}`;
+      draft += `<p><strong>${name}</strong></p>`;
+      if (beat.description) {
+        draft += `<p>${beat.description}</p>`;
+      }
+      draft += `<p>[Start writing here...]</p>`;
     });
   } else {
-    draft += `<h2>Chapter 1</h2><p>[Start writing your story here...]</p>`;
+    draft += `<p><strong>Inciting Incident</strong></p>`;
+    draft += `<p>[What disrupts the status quo?]</p>`;
+    draft += `<p><strong>Resolution</strong></p>`;
+    draft += `<p>[How does the conflict resolve?]</p>`;
   }
-  
+
+  draft += `<hr>`;
   return draft;
 }
 
@@ -320,15 +366,7 @@ export async function generateFullStoryDraft(
     
     prompt += `TITLE: ${storyData.title}\n`;
     
-    // Clean description if it contains error message from previous steps
-    const cleanDescription = storyData.description
-        ? storyData.description
-            .replace(/\[AI Generation Unavailable\]\s*/g, '')
-            .replace(/^Title: .*?(\n\n|\n)/, '')
-            .replace(/\(Note: The AI service is currently experiencing high traffic[\s\S]*\)/, '')
-            .replace(/\n\n(Story Type|Primary Archetype|Moral Conflict|IMPORTANT|Context):[\s\S]*/, '')
-            .trim()
-        : "";
+    const cleanDescription = cleanStoryDescription(storyData.description);
     
     prompt += `PREMISE: ${cleanDescription}\n\n`;
 
@@ -366,7 +404,16 @@ export async function generateFullStoryDraft(
     prompt += `3. Follow the scene outline to ensure pacing matches the structure.\n`;
     prompt += `4. Use vivid imagery and "show, don't tell" techniques.\n`;
     prompt += `5. CRITICAL: Write the story in ${targetLang}.\n`;
-    prompt += `6. CRITICAL: Output the story in semantic HTML format (e.g., <h1>Title</h1>, <h2>Chapter X</h2>, <p>Paragraph...</p>). Do not use Markdown.\n`;
+    prompt += `6. CRITICAL: Output ONLY semantic HTML (no Markdown). Follow this exact high-contrast structure:\n`;
+    prompt += `   - Start with <hr>\n`;
+    prompt += `   - Then <h3>🎬 FINAL STORY DRAFT</h3>\n`;
+    prompt += `   - Immediately after, a 3-item snapshot list:\n`;
+    prompt += `     <ul><li><strong>Protagonist:</strong> …</li><li><strong>Core Conflict:</strong> …</li><li><strong>Ending:</strong> …</li></ul>\n`;
+    prompt += `   - Then another <hr>\n`;
+    prompt += `   - Story body: label sections with bold inline labels in their own <p>, e.g. <p><strong>Act I: Setup</strong></p>, <p><strong>Inciting Incident</strong></p>, <p><strong>Resolution</strong></p>. Use labels that fit this story's outline/beats (at least Setup, Inciting Incident, and Resolution).\n`;
+    prompt += `   - Keep each narrative paragraph short (2–4 sentences) in its own <p>. Separate sections clearly.\n`;
+    prompt += `   - End with <hr>\n`;
+    prompt += `7. CRITICAL: Do NOT use <em>/<i> for whole blocks, gray callout boxes, nested cards, blockquotes, or code fences. No dimmed or low-contrast styling. Prefer <strong>, <p>, <h3>, <ul>/<li>, and <hr> only.\n`;
 
     const result = await generateGeminiText(prompt, { timeoutMs: 40_000 });
 

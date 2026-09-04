@@ -13,7 +13,7 @@ export function DraftEditor() {
         immediatelyRender: false,
         editorProps: {
             attributes: {
-                class: 'prose dark:prose-invert max-w-none focus:outline-none min-h-[500px] p-4',
+                class: 'story-draft-editor max-w-none focus:outline-none min-h-[500px] p-4',
             },
         },
         onUpdate: ({ editor }) => {
@@ -53,18 +53,18 @@ export function DraftEditor() {
     if (!editor) return null;
 
     return (
-        <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg bg-white dark:bg-zinc-900 overflow-hidden shadow-sm">
-            <div className="border-b border-zinc-200 dark:border-zinc-800 p-2 flex gap-2 bg-zinc-50 dark:bg-zinc-800/50 overflow-x-auto">
-                <button onClick={() => editor.chain().focus().toggleBold().run()} className={`px-2 py-1 text-sm rounded ${editor.isActive('bold') ? 'bg-zinc-200 dark:bg-zinc-700' : 'hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}>Bold</button>
-                <button onClick={() => editor.chain().focus().toggleItalic().run()} className={`px-2 py-1 text-sm rounded ${editor.isActive('italic') ? 'bg-zinc-200 dark:bg-zinc-700' : 'hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}>Italic</button>
-                <button onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} className={`px-2 py-1 text-sm rounded ${editor.isActive('heading', { level: 1 }) ? 'bg-zinc-200 dark:bg-zinc-700' : 'hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}>H1</button>
-                <button onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} className={`px-2 py-1 text-sm rounded ${editor.isActive('heading', { level: 2 }) ? 'bg-zinc-200 dark:bg-zinc-700' : 'hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}>H2</button>
-                <button onClick={() => editor.chain().focus().toggleBulletList().run()} className={`px-2 py-1 text-sm rounded ${editor.isActive('bulletList') ? 'bg-zinc-200 dark:bg-zinc-700' : 'hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}>List</button>
+        <div className="story-draft-shell rounded-lg overflow-hidden shadow-sm">
+            <div className="story-draft-toolbar p-2 flex gap-2 overflow-x-auto">
+                <button type="button" onClick={() => editor.chain().focus().toggleBold().run()} className={`px-2 py-1 text-sm rounded ${editor.isActive('bold') ? 'story-draft-toolbar-active' : ''}`}>Bold</button>
+                <button type="button" onClick={() => editor.chain().focus().toggleItalic().run()} className={`px-2 py-1 text-sm rounded ${editor.isActive('italic') ? 'story-draft-toolbar-active' : ''}`}>Italic</button>
+                <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} className={`px-2 py-1 text-sm rounded ${editor.isActive('heading', { level: 1 }) ? 'story-draft-toolbar-active' : ''}`}>H1</button>
+                <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} className={`px-2 py-1 text-sm rounded ${editor.isActive('heading', { level: 2 }) ? 'story-draft-toolbar-active' : ''}`}>H2</button>
+                <button type="button" onClick={() => editor.chain().focus().toggleBulletList().run()} className={`px-2 py-1 text-sm rounded ${editor.isActive('bulletList') ? 'story-draft-toolbar-active' : ''}`}>List</button>
             </div>
             <div className="relative">
                  {isGenerating && (
-                    <div className="absolute inset-0 bg-white/50 dark:bg-black/50 flex items-center justify-center z-10 backdrop-blur-sm">
-                        <div className="text-indigo-600 font-medium animate-pulse">Generating Draft...</div>
+                    <div className="absolute inset-0 story-draft-overlay flex items-center justify-center z-10 backdrop-blur-sm">
+                        <div className="story-draft-generating font-medium animate-pulse">Generating Draft...</div>
                     </div>
                 )}
                 <EditorContent editor={editor} />
@@ -72,5 +72,3 @@ export function DraftEditor() {
         </div>
     );
 }
-
-

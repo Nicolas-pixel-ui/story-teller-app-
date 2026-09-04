@@ -489,3 +489,110 @@ a {
 .ui-stat-value {
   font-weight: 700;
 }
+
+/* --------------------------------------------------------------------------
+ * Story draft editor — high contrast on dark / Brave remapped themes.
+ * Ink surface + cream text; no dim prose-gray.
+ * -------------------------------------------------------------------------- */
+.story-draft-shell {
+  color-scheme: only light;
+  border: 2px solid #faf7ef !important;
+  background-color: #1d2e3f !important;
+  background-image: none !important;
+}
+
+.story-draft-toolbar {
+  color-scheme: only light;
+  border-bottom: 1px solid rgb(250 247 239 / 0.25) !important;
+  background-color: #152230 !important;
+  background-image: none !important;
+  color: #faf7ef !important;
+  -webkit-text-fill-color: #faf7ef !important;
+}
+
+.story-draft-toolbar button {
+  color: #faf7ef !important;
+  -webkit-text-fill-color: #faf7ef !important;
+}
+
+.story-draft-toolbar button:hover {
+  background-color: rgb(250 247 239 / 0.12) !important;
+}
+
+.story-draft-toolbar-active {
+  background-color: rgb(250 247 239 / 0.22) !important;
+}
+
+.story-draft-overlay {
+  background-color: rgb(29 46 63 / 0.75) !important;
+}
+
+.story-draft-generating {
+  color: #faf7ef !important;
+  -webkit-text-fill-color: #faf7ef !important;
+}
+
+.story-draft-editor {
+  color-scheme: only light;
+  background-color: #1d2e3f !important;
+  background-image: none !important;
+  color: #faf7ef !important;
+  -webkit-text-fill-color: #faf7ef !important;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+}
+
+.story-draft-editor h1,
+.story-draft-editor h2,
+.story-draft-editor h3,
+.story-draft-editor h4,
+.story-draft-editor strong,
+.story-draft-editor b,
+.story-draft-editor p,
+.story-draft-editor li,
+.story-draft-editor ul,
+.story-draft-editor ol {
+  color: #faf7ef !important;
+  -webkit-text-fill-color: #faf7ef !important;
+}
+
+.story-draft-editor h1,
+.story-draft-editor h2,
+.story-draft-editor h3 {
+  font-weight: 700;
+  margin-top: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.story-draft-editor h3 {
+  font-size: 1.35rem;
+}
+
+.story-draft-editor p {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.story-draft-editor ul {
+  margin: 0.75rem 0 1.25rem;
+  padding-left: 1.25rem;
+  list-style-type: disc;
+}
+
+.story-draft-editor li {
+  margin-bottom: 0.35rem;
+}
+
+.story-draft-editor hr {
+  border: none;
+  border-top: 2px solid #faf7ef !important;
+  margin: 1.5rem 0;
+}
+
+.story-draft-editor em,
+.story-draft-editor i {
+  /* Avoid dim italics — keep same cream contrast as body */
+  color: #faf7ef !important;
+  -webkit-text-fill-color: #faf7ef !important;
+  font-style: normal;
+}

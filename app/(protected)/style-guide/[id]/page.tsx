@@ -15,8 +15,15 @@ export async function generateMetadata({
   return selfReferencingCanonical(`/style-guide/${id}`);
 }
 
-export default async function EditStyleGuidePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditStyleGuidePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string }>;
+}) {
   const { id } = await params;
+  const { tab } = await searchParams;
 
   let guide;
   let dictionary: InferSelectModel<typeof dictionaryEntries>[];
@@ -41,7 +48,11 @@ export default async function EditStyleGuidePage({ params }: { params: Promise<{
 
   return (
     <div className="ui-style-shell min-h-screen">
-      <StyleGuideEditor guide={guide} initialDictionary={dictionary} />
+      <StyleGuideEditor
+        guide={guide}
+        initialDictionary={dictionary}
+        initialTab={tab === "ai-import" ? "ai-import" : "overview"}
+      />
     </div>
   );
 }

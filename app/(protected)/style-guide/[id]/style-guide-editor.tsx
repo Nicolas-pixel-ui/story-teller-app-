@@ -2,13 +2,13 @@
 
 import { useState, useTransition, useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, Save, Plus, Trash2, Upload, Link as LinkIcon, FileText, Sparkles, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, Upload, Link as LinkIcon, FileText, Sparkles, Loader2, CheckCircle, XCircle, Copy, Check } from "lucide-react";
 import { updateStyleGuide, addDictionaryEntry, deleteDictionaryEntry, updateDictionaryEntry } from "../actions";
 import { analyzeDocumentAction, analyzeUrlAction, analyzeTextAction } from "../ai-actions";
 import { tones, writingStyles, perspectives } from "@/lib/data/styleOptions";
 import { InferSelectModel } from "drizzle-orm";
 import { styleGuides, dictionaryEntries } from "@/lib/db/schema";
-import { StyleAnalysisResult } from "@/lib/ai/style-analyzer";
+import { StyleAnalysisResult, formatMarketingIdeasForGuide, mergeToneDescriptionWithIdeas } from "@/lib/ai/style-analyzer";
 import { BraveMenuSelect, StyleChoiceList } from "./style-choice";
 import {
   brandInkButtonClassName,
@@ -29,6 +29,7 @@ type DictionaryEntry = InferSelectModel<typeof dictionaryEntries>;
 interface StyleGuideEditorProps {
   guide: StyleGuide;
   initialDictionary: DictionaryEntry[];
+  initialTab?: "overview" | "visuals" | "dictionary" | "ai-import";
 }
 
 const COMPLEXITY_LEVELS = [
@@ -167,8 +168,8 @@ const COLOR_PALETTES = [
   },
 ];
 
-export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorProps) {
-  const [activeTab, setActiveTab] = useState<"overview" | "visuals" | "dictionary" | "ai-import">("overview");
+export function StyleGuideEditor({ guide, initialDictionary, initialTab = "overview" }: StyleGuideEditorProps) {
+  const [activeTab, setActiveTab] = useState<"overview" | "visuals" | "dictionary" | "ai-import">(initialTab);
   const [isSaving, startTransition] = useTransition();
   const [formData, setFormData] = useState(guide);
 
@@ -202,6 +203,7 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [urlInput, setUrlInput] = useState("");
   const [textInput, setTextInput] = useState("");
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
@@ -331,7 +333,7 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
       const formData = new FormData();
       formData.append("file", file);
 
-      setAnalysisProgress("Extracting text content...");
+    setAnalysisProgress("Extracting text and generating marketing ideas...");
       const result = await analyzeDocumentAction(formData);
       
       setIsAnalyzing(false);
@@ -364,7 +366,7 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
     setIsAnalyzing(true);
     setAnalysisError(null);
     setAnalysisResult(null);
-    setAnalysisProgress("Fetching content from URL...");
+    setAnalysisProgress("Fetching content and generating marketing ideas...");
 
     try {
       const result = await analyzeUrlAction(urlInput.trim());
@@ -394,7 +396,7 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
     setIsAnalyzing(true);
     setAnalysisError(null);
     setAnalysisResult(null);
-    setAnalysisProgress("Analyzing writing style...");
+    setAnalysisProgress("Generating marketing and advertisement ideas...");
 
     try {
       const result = await analyzeTextAction(textInput.trim());
@@ -423,7 +425,12 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
       writingStyleId: analysisResult.writingStyleId,
       perspectiveId: analysisResult.perspectiveId,
       complexityLevel: analysisResult.complexityLevel,
-      toneDescription: analysisResult.toneDescription,
+      toneDescription: partial
+        ? analysisResult.toneDescription
+        : mergeToneDescriptionWithIdeas(
+            analysisResult.toneDescription,
+            analysisResult.marketingIdeas || []
+          ),
     };
 
     setFormData({ ...formData, ...updates });
@@ -468,6 +475,19 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
     setAnalysisError(null);
     setUrlInput("");
     setTextInput("");
+    setActiveTab("overview");
+  };
+
+  const copyToClipboard = async (key: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedKey(key);
+      window.setTimeout(() => {
+        setCopiedKey((current) => (current === key ? null : current));
+      }, 1600);
+    } catch (error) {
+      console.error("Clipboard copy failed:", error);
+    }
   };
 
   return (
@@ -962,7 +982,7 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
               <div>
                 <h3 className="text-lg font-semibold mb-2">AI-Powered Style Import</h3>
                 <p className="text-sm text-zinc-500">
-                  Analyze documents, URLs, or text samples to automatically extract style characteristics.
+                  Analyze a document, URL, or text sample to extract style characteristics and generate marketing and advertisement ideas.
                 </p>
               </div>
 
@@ -1051,7 +1071,7 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
                     ) : (
                       <>
                         <Sparkles className="w-4 h-4" />
-                        Analyze URL
+                        Generate Ideas from URL
                       </>
                     )}
                   </button>
@@ -1066,7 +1086,7 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
                     <textarea
                       value={textInput}
                       onChange={(e) => setTextInput(e.target.value)}
-                      placeholder="Paste a writing sample here (minimum 100 characters)..."
+                      placeholder="Paste a writing sample, brand story, or campaign brief (minimum 100 characters)..."
                       rows={8}
                       className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2 font-mono text-sm"
                       disabled={isAnalyzing}
@@ -1088,7 +1108,7 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
                     ) : (
                       <>
                         <Sparkles className="w-4 h-4" />
-                        Analyze Text
+                        Generate Marketing Ideas
                       </>
                     )}
                   </button>
@@ -1103,7 +1123,7 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
                 >
                   <Loader2 className="w-5 h-5 flex-shrink-0 mt-0.5 animate-spin" />
                   <div>
-                    <p className="font-medium">Analyzing Content</p>
+                    <p className="font-medium">Generating Ideas</p>
                     <p className="text-sm mt-1">{analysisProgress}</p>
                     <p className="text-xs mt-2">This may take 10-30 seconds depending on content size...</p>
                   </div>
@@ -1140,6 +1160,65 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
                   </div>
                   
                   <div className="p-4 space-y-4">
+                    {(analysisResult.marketingIdeas?.length ?? 0) > 0 ? (
+                      <div>
+                        <div className="flex items-center justify-between gap-3 mb-2">
+                          <label className="block text-xs font-medium">
+                            Marketing & Advertisement Ideas ({analysisResult.marketingIdeas.length})
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              copyToClipboard(
+                                "all-ideas",
+                                formatMarketingIdeasForGuide(analysisResult.marketingIdeas)
+                              )
+                            }
+                            className="ui-style-result-btn inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs"
+                            style={brandStyleResultBtnStyle}
+                          >
+                            {copiedKey === "all-ideas" ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                            {copiedKey === "all-ideas" ? "Copied" : "Copy all"}
+                          </button>
+                        </div>
+                        <div className="space-y-3">
+                          {analysisResult.marketingIdeas.map((idea, idx) => (
+                            <div
+                              key={`${idea.title}-${idx}`}
+                              className="ui-style-result-card p-3"
+                              style={brandStyleResultCardStyle}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <p className="text-xs uppercase tracking-wide opacity-80">{idea.channel}</p>
+                                  <p className="font-medium mt-1">{idea.title}</p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    copyToClipboard(
+                                      `idea-${idx}`,
+                                      `${idea.title} (${idea.channel})\nHeadline: ${idea.headline}\n${idea.concept}\nCTA: ${idea.cta}`
+                                    )
+                                  }
+                                  className="ui-style-result-btn inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs shrink-0"
+                                  style={brandStyleResultBtnStyle}
+                                >
+                                  {copiedKey === `idea-${idx}` ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                  {copiedKey === `idea-${idx}` ? "Copied" : "Copy"}
+                                </button>
+                              </div>
+                              <p className="text-sm font-medium mt-2">{idea.headline}</p>
+                              <p className="text-sm mt-1 opacity-90">{idea.concept}</p>
+                              <p className="text-xs mt-2">CTA: {idea.cta}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm">No marketing ideas were generated. Style settings are still available below.</p>
+                    )}
+
                     {/* Style Settings */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -1233,7 +1312,7 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
                         className={`${brandInkButtonClassName} flex-1 px-4 py-2 text-sm`}
                         style={brandInkButtonStyle}
                       >
-                        Apply All
+                        Apply Style & Ideas
                       </button>
                       <button
                         onClick={() => applyAnalysisResults(true)}

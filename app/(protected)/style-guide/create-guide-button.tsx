@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { createStyleGuide } from "./actions";
 import { brandInkButtonClassName, brandInkButtonStyle } from "@/lib/ui/button-classes";
 
 export function CreateGuideButton() {
+  const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
 
   const handleCreate = async () => {
@@ -14,7 +16,11 @@ export function CreateGuideButton() {
     formData.append("name", "New Style Guide");
     
     try {
-      await createStyleGuide(formData);
+      const guide = await createStyleGuide(formData);
+      if (guide?.id) {
+        router.push(`/style-guide/${guide.id}?tab=ai-import`);
+        return;
+      }
     } catch (error) {
       console.error("Failed to create guide", error);
       alert("Failed to create style guide");

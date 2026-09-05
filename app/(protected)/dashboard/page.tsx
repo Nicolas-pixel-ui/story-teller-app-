@@ -3,7 +3,7 @@ import { AUTH_ROUTES } from "@/lib/auth/routes";
 import { selfReferencingCanonical } from "@/lib/seo/site-metadata";
 import Link from "next/link";
 import { brandPrimaryButtonClassName, brandPrimaryButtonStyle, brandSurfaceButtonClassName, brandSurfaceCardClassName, brandSurfaceCardStyle, brandSurfaceLabelClassName, brandSurfaceLabelStyle, brandSurfaceValueClassName, brandSurfaceValueStyle } from "@/lib/ui/button-classes";
-import { BookOpen, PenTool, TrendingUp, Calendar, ArrowRight, Plus } from "lucide-react";
+import { BookOpen, PenTool, TrendingUp, Calendar, ArrowRight, Plus, Palette } from "lucide-react";
 import { getStyleGuidesForUser } from "../style-guide/actions";
 import { StyleGuideSelector } from "./style-guide-selector";
 import { getRequestUser } from "@/lib/auth/request-user";
@@ -166,6 +166,93 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <h3 className={`text-2xl font-bold ${brandSurfaceValueClassName}`} style={brandSurfaceValueStyle}>{stats.streak} Days</h3>
             </div>
           </div>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-brand-ink dark:text-brand-yellow">Style Guides</h2>
+            <Link
+              href="/style-guide"
+              className="text-sm font-medium text-brand-ink/85 dark:text-brand-seafoam hover:text-brand-teal dark:hover:text-brand-yellow flex items-center gap-1"
+            >
+              View all style guides
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {styleGuides.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {styleGuides.map((guide) => (
+                <div
+                  key={guide.id}
+                  className={`group ${brandSurfaceCardClassName} overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full`}
+                >
+                  <div className="p-6 flex-1">
+                    <div className="flex items-start justify-between mb-2 gap-2">
+                      <span className="inline-flex items-center rounded-full border border-brand-seafoam/40 px-2.5 py-0.5 text-xs font-semibold capitalize text-brand-ink">
+                        {guide.toneId?.replace("_", " ") || "No tone"}
+                      </span>
+                      <span className="text-xs text-brand-ink/80 flex items-center gap-1 shrink-0">
+                        <Calendar className="h-3 w-3" />
+                        {guide.updatedAt ? new Date(guide.updatedAt).toLocaleDateString() : "—"}
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-bold text-brand-ink mb-2 line-clamp-1">
+                      {guide.name || "Untitled Style Guide"}
+                    </h3>
+                    <p className="text-sm text-brand-ink/85 line-clamp-3 mb-4">
+                      {guide.toneDescription?.trim() ||
+                        `${guide.writingStyleId?.replace("_", " ") || "Standard"} style · ${guide.complexityLevel || "No complexity set"}`}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      {guide.primaryColor ? (
+                        <div
+                          className="h-5 w-5 rounded-full border border-brand-seafoam/50"
+                          style={{ backgroundColor: guide.primaryColor }}
+                          title="Primary color"
+                        />
+                      ) : null}
+                      {guide.secondaryColor ? (
+                        <div
+                          className="h-5 w-5 rounded-full border border-brand-seafoam/50"
+                          style={{ backgroundColor: guide.secondaryColor }}
+                          title="Secondary color"
+                        />
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="px-6 py-4 bg-brand-cream/60 dark:bg-brand-ink/60 border-t border-brand-seafoam/30 mt-auto">
+                    <Link
+                      href={`/style-guide/${guide.id}`}
+                      className={`${brandSurfaceButtonClassName} w-auto border border-brand-seafoam/50 px-4 py-2 hover:opacity-90 transition-opacity`}
+                    >
+                      Open Guide
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-brand-seafoam/50 bg-brand-cream/60 dark:bg-brand-ink/60 p-12 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-seafoam/20">
+                <Palette className="h-6 w-6 text-brand-teal dark:text-brand-seafoam" />
+              </div>
+              <h3 className="mt-2 text-sm font-semibold text-brand-ink dark:text-brand-yellow">No style guides yet</h3>
+              <p className="mt-1 text-sm text-brand-ink/85 dark:text-brand-seafoam">
+                Save a brand voice once, then reuse it on every story.
+              </p>
+              <div className="mt-6">
+                <Link
+                  href="/style-guide"
+                  className={`${brandPrimaryButtonClassName} px-3 py-2 text-sm font-semibold shadow-sm`}
+                  style={brandPrimaryButtonStyle}
+                >
+                  <Plus className="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />
+                  Create Style Guide
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Recent Activity Section */}

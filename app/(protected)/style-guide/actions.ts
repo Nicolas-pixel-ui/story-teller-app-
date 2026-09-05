@@ -36,9 +36,11 @@ export async function createStyleGuide(formData: FormData) {
   const name = formData.get("name") as string;
   if (!name) throw new Error("Name is required");
 
+  const uniqueName = await uniqueStyleGuideName(user.id, name);
+
   const newGuide = await db.insert(styleGuides).values({
     userId: user.id,
-    name,
+    name: uniqueName,
     toneId: "neutral",
     writingStyleId: "standard",
     perspectiveId: "third_limited",
@@ -49,7 +51,25 @@ export async function createStyleGuide(formData: FormData) {
   }).returning();
 
   revalidatePath("/style-guide");
+  revalidatePath("/dashboard");
   return newGuide[0];
+}
+
+async function uniqueStyleGuideName(userId: string, requestedName: string) {
+  const existing = await db
+    .select({ name: styleGuides.name })
+    .from(styleGuides)
+    .where(eq(styleGuides.userId, userId));
+  const names = new Set(existing.map((guide) => guide.name));
+  if (!names.has(requestedName)) return requestedName;
+
+  let suffix = 2;
+  let candidate = `${requestedName} ${suffix}`;
+  while (names.has(candidate)) {
+    suffix += 1;
+    candidate = `${requestedName} ${suffix}`;
+  }
+  return candidate;
 }
 
 export async function deleteStyleGuide(id: string) {
@@ -67,6 +87,7 @@ export async function deleteStyleGuide(id: string) {
 
   await db.delete(styleGuides).where(eq(styleGuides.id, id));
   revalidatePath("/style-guide");
+  revalidatePath("/dashboard");
 }
 
 export async function duplicateStyleGuide(id: string) {
@@ -85,7 +106,7 @@ export async function duplicateStyleGuide(id: string) {
 
   const newGuide = await db.insert(styleGuides).values({
     ...rest,
-    name: `${name} (Copy)`,
+    name: await uniqueStyleGuideName(user.id, `${name} (Copy)`),
   }).returning();
 
   // Copy dictionary entries if we had them (not yet implemented in create, but good for future)
@@ -106,6 +127,7 @@ export async function duplicateStyleGuide(id: string) {
   }
 
   revalidatePath("/style-guide");
+  revalidatePath("/dashboard");
 }
 
 export async function getStyleGuide(id: string) {
@@ -149,6 +171,7 @@ export async function updateStyleGuide(id: string, data: Partial<typeof styleGui
 
   revalidatePath(`/style-guide/${id}`);
   revalidatePath("/style-guide");
+  revalidatePath("/dashboard");
 }
 
 export async function getDictionaryEntries(styleGuideId: string) {

@@ -18,7 +18,7 @@ function navClass(isActive: boolean) {
 }
 
 /**
- * Primary app navigation (Dashboard, stories, settings, blogs, blog admin, seo admin).
+ * Primary app navigation (Dashboard, stories, style guides, settings, blogs, blog admin, seo admin).
  * Shared by the protected layout and the public blog header when signed in.
  */
 export function AppShellNavLinks({
@@ -34,6 +34,7 @@ export function AppShellNavLinks({
 
   const isDashboard = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
   const isStories = pathname === "/stories" || pathname.startsWith("/stories/");
+  const isStyleGuides = pathname === "/style-guide" || pathname.startsWith("/style-guide/");
   const isSettings = pathname === "/settings" || pathname.startsWith("/settings/");
   const isFeedback =
     pathname === "/feedback" ||
@@ -59,6 +60,9 @@ export function AppShellNavLinks({
       </Link>
       <Link href="/stories" className={navClass(isStories)}>
         My stories
+      </Link>
+      <Link href="/style-guide" className={navClass(isStyleGuides)}>
+        Style Guides
       </Link>
       <Link href="/settings" className={navClass(isSettings)}>
         Settings

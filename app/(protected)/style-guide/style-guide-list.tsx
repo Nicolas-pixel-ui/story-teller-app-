@@ -1,8 +1,8 @@
 "use client";
 
-import { useTransition } from "react";
+import { useSyncExternalStore, useTransition } from "react";
 import Link from "next/link";
-import { MoreVertical, Copy, Trash2, Edit2 } from "lucide-react";
+import { Copy, Trash2, Edit2 } from "lucide-react";
 import { deleteStyleGuide, duplicateStyleGuide } from "./actions";
 import { InferSelectModel } from "drizzle-orm";
 import { styleGuides } from "@/lib/db/schema";
@@ -54,7 +54,7 @@ function StyleGuideCard({ guide }: { guide: StyleGuide }) {
         <div>
           <h3 className="font-semibold text-lg mb-1">{guide.name}</h3>
           <p className="text-xs" style={{ color: "#faf7ef", WebkitTextFillColor: "#faf7ef" }}>
-            Updated {new Date(guide.updatedAt).toLocaleDateString()}
+            <UpdatedAtLabel value={guide.updatedAt} />
           </p>
         </div>
         <div className="flex gap-1">
@@ -116,6 +116,26 @@ function StyleGuideCard({ guide }: { guide: StyleGuide }) {
     </div>
   );
 }
+
+function subscribe() {
+  return () => {};
+}
+
+function toIso(value: Date | string) {
+  return (value instanceof Date ? value : new Date(value)).toISOString();
+}
+
+function UpdatedAtLabel({ value }: { value: Date | string }) {
+  const iso = toIso(value);
+  const label = useSyncExternalStore(
+    subscribe,
+    () => new Date(iso).toLocaleDateString(),
+    () => new Date(iso).toISOString().slice(0, 10),
+  );
+
+  return <time dateTime={iso}>Updated {label}</time>;
+}
+
 
 
 

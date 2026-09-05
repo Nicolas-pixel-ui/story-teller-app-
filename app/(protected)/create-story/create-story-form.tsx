@@ -236,9 +236,15 @@ export default function CreateStoryForm({
                     className="text-sm rounded-md border border-brand-seafoam/50 dark:border-brand-seafoam/30 bg-white dark:bg-brand-ink py-1.5 px-2 max-w-[200px] text-brand-ink dark:text-brand-seafoam"
                 >
                     <option value="">None (Custom)</option>
-                    {styleGuides.map(sg => (
-                        <option key={sg.id} value={sg.id}>{sg.name}</option>
-                    ))}
+                    {styleGuides.map(sg => {
+                        const duplicateName = styleGuides.filter((other) => other.name === sg.name).length > 1;
+                        const updated = sg.updatedAt ? new Date(sg.updatedAt).toLocaleDateString() : "";
+                        return (
+                          <option key={sg.id} value={sg.id}>
+                            {duplicateName && updated ? `${sg.name} (${updated})` : sg.name}
+                          </option>
+                        );
+                    })}
                 </select>
             </div>
           </div>

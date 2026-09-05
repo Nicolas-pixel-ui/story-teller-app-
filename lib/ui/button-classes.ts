@@ -10,6 +10,8 @@ export {
   brandStatLabelStyle as brandSurfaceLabelStyle,
   brandStatValueStyle as brandSurfaceValueStyle,
   brandStylePanelStyle,
+  brandStyleResultBtnStyle,
+  brandStyleResultCardStyle,
   brandStyleTabActiveStyle,
   brandStyleTabStyle,
   brandSurfaceButtonStyle,

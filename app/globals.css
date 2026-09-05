@@ -752,33 +752,53 @@ a {
   caret-color: #ffffff;
 }
 
-/* Choose New Style — hide current copy without collapsing layout. */
-.ui-style-text-hidden--opacity {
-  opacity: 0;
-  pointer-events: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.ui-style-text-hidden--visibility {
-  visibility: hidden;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.ui-hide-mode {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 1rem;
-}
-
-.ui-hide-mode-option {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.8rem;
+.ui-style-result-card {
+  background-color: #1d2e3f !important;
+  background-image: none !important;
   color: #ffffff !important;
   -webkit-text-fill-color: #ffffff !important;
+  border: 1px solid #ffffff !important;
+  border-radius: 0.5rem;
+  color-scheme: dark;
+  forced-color-adjust: none;
+}
+
+.ui-style-result-card p,
+.ui-style-result-card h4,
+.ui-style-result-card label,
+.ui-style-result-card span {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.ui-style-result-card svg,
+.ui-style-result-card path {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+.ui-style-result-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #1d2e3f !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  border: 1px solid #ffffff !important;
+  color-scheme: dark;
+  forced-color-adjust: none;
   cursor: pointer;
+}
+
+.ui-style-confidence {
+  height: 0.25rem;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  overflow: hidden;
+}
+
+.ui-style-confidence-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background-color: #9b7d2e !important;
 }

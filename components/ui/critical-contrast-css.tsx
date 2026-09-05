@@ -24,6 +24,12 @@ html{color-scheme:only light}
 .ui-style-shell{background-color:#1d2e3f!important;background-image:none!important;color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;color-scheme:dark;forced-color-adjust:none}
 .ui-style-choice,.ui-style-choice-menu{appearance:none;-webkit-appearance:none;background-color:#1d2e3f!important;background-image:none!important;color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;border:1px solid #ffffff!important;color-scheme:dark;forced-color-adjust:none}
 .ui-style-choice-active{background-color:#9b7d2e!important;background-image:none!important;color:#ffffff!important;-webkit-text-fill-color:#ffffff!important}
+.ui-style-result-card{background-color:#1d2e3f!important;background-image:none!important;color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;border:1px solid #ffffff!important;color-scheme:dark;forced-color-adjust:none}
+.ui-style-result-card p,.ui-style-result-card h4,.ui-style-result-card label,.ui-style-result-card span{color:#ffffff!important;-webkit-text-fill-color:#ffffff!important}
+.ui-style-result-card svg,.ui-style-result-card path{color:#ffffff!important;stroke:#ffffff!important}
+.ui-style-result-btn{appearance:none;-webkit-appearance:none;background-color:#1d2e3f!important;background-image:none!important;color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;border:1px solid #ffffff!important;color-scheme:dark;forced-color-adjust:none}
+.ui-style-confidence{background-color:rgba(255,255,255,.25)!important}
+.ui-style-confidence-fill{background-color:#9b7d2e!important}
 .ui-style-shell button.text-zinc-500{color:#ffffff!important;-webkit-text-fill-color:#ffffff!important}
 .ui-style-shell select,.ui-style-panel select{appearance:none;-webkit-appearance:none;background-color:#1d2e3f!important;background-image:none!important;color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;border:1px solid #ffffff!important;color-scheme:dark;forced-color-adjust:none;caret-color:#ffffff}
 .story-draft-editor h1,.story-draft-editor h2,.story-draft-editor h3,.story-draft-editor p,.story-draft-editor li,.story-draft-editor strong{color:#faf7ef!important;-webkit-text-fill-color:#faf7ef!important}

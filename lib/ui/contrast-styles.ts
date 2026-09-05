@@ -67,3 +67,23 @@ export const brandStylePanelStyle: CSSProperties = {
   color: WHITE,
   WebkitTextFillColor: WHITE,
 };
+
+/** AI Import result cards: white copy on ink, white border (Brave-safe). */
+export const brandStyleResultCardStyle: CSSProperties = {
+  colorScheme: "dark",
+  backgroundColor: INK,
+  backgroundImage: "none",
+  color: WHITE,
+  WebkitTextFillColor: WHITE,
+  border: `1px solid ${WHITE}`,
+};
+
+/** Secondary result actions: white label on ink, white border (Brave-safe). */
+export const brandStyleResultBtnStyle: CSSProperties = {
+  colorScheme: "dark",
+  backgroundColor: INK,
+  backgroundImage: "none",
+  color: WHITE,
+  WebkitTextFillColor: WHITE,
+  border: `1px solid ${WHITE}`,
+};

@@ -15,6 +15,8 @@ import {
   brandInkButtonStyle,
   brandStylePanelClassName,
   brandStylePanelStyle,
+  brandStyleResultBtnStyle,
+  brandStyleResultCardStyle,
   brandStyleTabActiveClassName,
   brandStyleTabActiveStyle,
   brandStyleTabClassName,
@@ -169,8 +171,6 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
   const [activeTab, setActiveTab] = useState<"overview" | "visuals" | "dictionary" | "ai-import">("overview");
   const [isSaving, startTransition] = useTransition();
   const [formData, setFormData] = useState(guide);
-  const [styleTextHidden, setStyleTextHidden] = useState(false);
-  const [textHideMode, setTextHideMode] = useState<"opacity" | "visibility">("visibility");
 
   // Dictionary State
   const [dictionary, setDictionary] = useState(initialDictionary);
@@ -428,28 +428,38 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
 
     setFormData({ ...formData, ...updates });
 
-    // Add suggested terms to dictionary
+    // Add suggested terms to dictionary (batch so every term appears, not only the last)
     if (!partial && analysisResult.suggestedTerms.length > 0) {
-      analysisResult.suggestedTerms.forEach(async (term) => {
-        startTransition(async () => {
-          await addDictionaryEntry(guide.id, {
+      const newEntries = analysisResult.suggestedTerms.map(
+        (term) =>
+          ({
+            id: crypto.randomUUID(),
+            styleGuideId: guide.id,
             term: term.term,
-            definition: term.definition || "",
-            usageGuidelines: term.usageGuidelines || "",
+            definition: term.definition || null,
+            usageGuidelines: term.usageGuidelines || null,
             category: "General",
-          } as any);
-        });
-        
-        setDictionary([...dictionary, {
-          id: crypto.randomUUID(),
-          styleGuideId: guide.id,
-          term: term.term,
-          definition: term.definition || null,
-          usageGuidelines: term.usageGuidelines || null,
-          category: "General",
-          createdAt: new Date(),
-          updatedAt: new Date()
-        } as DictionaryEntry]);
+            termType: null,
+            importance: null,
+            usageFrequency: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }) as DictionaryEntry
+      );
+
+      setDictionary((current) => [...current, ...newEntries]);
+
+      startTransition(async () => {
+        await Promise.all(
+          analysisResult.suggestedTerms.map((term) =>
+            addDictionaryEntry(guide.id, {
+              term: term.term,
+              definition: term.definition || "",
+              usageGuidelines: term.usageGuidelines || "",
+              category: "General",
+            } as any)
+          )
+        );
       });
     }
 
@@ -544,93 +554,52 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
         >
           {activeTab === "overview" && (
             <div className="space-y-6">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <button
-                  type="button"
-                  aria-pressed={styleTextHidden}
-                  onClick={() => setStyleTextHidden((current) => !current)}
-                  className={`${brandInkButtonClassName} px-4 py-2 text-sm w-fit`}
-                  style={brandInkButtonStyle}
-                >
-                  {styleTextHidden ? "Show Style Text" : "Choose New Style"}
-                </button>
-                <fieldset className="ui-hide-mode">
-                  <legend className="sr-only">How to hide style text</legend>
-                  <label className="ui-hide-mode-option">
-                    <input
-                      type="radio"
-                      name="style-text-hide-mode"
-                      checked={textHideMode === "opacity"}
-                      onChange={() => setTextHideMode("opacity")}
-                    />
-                    Opacity (keep spacing)
-                  </label>
-                  <label className="ui-hide-mode-option">
-                    <input
-                      type="radio"
-                      name="style-text-hide-mode"
-                      checked={textHideMode === "visibility"}
-                      onChange={() => setTextHideMode("visibility")}
-                    />
-                    Visibility (no selection)
-                  </label>
-                </fieldset>
+              <div>
+                <label className="block text-sm font-medium mb-2">Guide Name</label>
+                <input
+                  type="text"
+                  value={formData.name || ""}
+                  onChange={(e) => handleChange("name", e.target.value)}
+                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
+                />
               </div>
 
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Guide Name</label>
-                  <input
-                    type="text"
-                    value={formData.name || ""}
-                    onChange={(e) => handleChange("name", e.target.value)}
-                    className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
-                  />
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <StyleChoiceList
+                  label="Tone"
+                  value={formData.toneId || ""}
+                  options={tones.map((t) => ({ value: t.id, label: t.label }))}
+                  onChange={(next) => handleChange("toneId", next)}
+                />
+                <StyleChoiceList
+                  label="Writing Style"
+                  value={formData.writingStyleId || ""}
+                  options={writingStyles.map((s) => ({ value: s.id, label: s.label }))}
+                  onChange={(next) => handleChange("writingStyleId", next)}
+                />
+                <StyleChoiceList
+                  label="Perspective"
+                  value={formData.perspectiveId || ""}
+                  options={perspectives.map((p) => ({ value: p.id, label: p.label }))}
+                  onChange={(next) => handleChange("perspectiveId", next)}
+                />
+                <StyleChoiceList
+                  label="Complexity Level"
+                  value={formData.complexityLevel || ""}
+                  options={COMPLEXITY_LEVELS.map((level) => ({ value: level, label: level }))}
+                  onChange={(next) => handleChange("complexityLevel", next)}
+                />
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <StyleChoiceList
-                    label="Tone"
-                    value={formData.toneId || ""}
-                    options={tones.map((t) => ({ value: t.id, label: t.label }))}
-                    onChange={(next) => handleChange("toneId", next)}
-                  />
-                  <StyleChoiceList
-                    label="Writing Style"
-                    value={formData.writingStyleId || ""}
-                    options={writingStyles.map((s) => ({ value: s.id, label: s.label }))}
-                    onChange={(next) => handleChange("writingStyleId", next)}
-                  />
-                  <StyleChoiceList
-                    label="Perspective"
-                    value={formData.perspectiveId || ""}
-                    options={perspectives.map((p) => ({ value: p.id, label: p.label }))}
-                    onChange={(next) => handleChange("perspectiveId", next)}
-                  />
-                  <StyleChoiceList
-                    label="Complexity Level"
-                    value={formData.complexityLevel || ""}
-                    options={COMPLEXITY_LEVELS.map((level) => ({ value: level, label: level }))}
-                    onChange={(next) => handleChange("complexityLevel", next)}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Tone Description / AI Instructions</label>
-                  <textarea
-                    value={formData.toneDescription || ""}
-                    onChange={(e) => handleChange("toneDescription", e.target.value)}
-                    rows={4}
-                    className={
-                      styleTextHidden
-                        ? `w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2 ui-style-text-hidden--${textHideMode}`
-                        : "w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
-                    }
-                    placeholder="Describe the voice and tone in detail (e.g., 'Friendly but professional, avoiding jargon...')"
-                    aria-hidden={styleTextHidden}
-                    tabIndex={styleTextHidden ? -1 : undefined}
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Tone Description / AI Instructions</label>
+                <textarea
+                  value={formData.toneDescription || ""}
+                  onChange={(e) => handleChange("toneDescription", e.target.value)}
+                  rows={4}
+                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
+                  placeholder="Describe the voice and tone in detail (e.g., 'Friendly but professional, avoiding jargon...')"
+                />
               </div>
             </div>
           )}
@@ -1128,34 +1097,43 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
 
               {/* Progress Display */}
               {isAnalyzing && analysisProgress && (
-                <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                  <Loader2 className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5 animate-spin" />
+                <div
+                  className="ui-style-result-card flex items-start gap-3 p-4"
+                  style={brandStyleResultCardStyle}
+                >
+                  <Loader2 className="w-5 h-5 flex-shrink-0 mt-0.5 animate-spin" />
                   <div>
-                    <p className="font-medium text-blue-900 dark:text-blue-200">Analyzing Content</p>
-                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">{analysisProgress}</p>
-                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">This may take 10-30 seconds depending on content size...</p>
+                    <p className="font-medium">Analyzing Content</p>
+                    <p className="text-sm mt-1">{analysisProgress}</p>
+                    <p className="text-xs mt-2">This may take 10-30 seconds depending on content size...</p>
                   </div>
                 </div>
               )}
 
               {/* Error Display */}
               {analysisError && (
-                <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <div
+                  className="ui-style-result-card flex items-start gap-3 p-4"
+                  style={brandStyleResultCardStyle}
+                >
+                  <XCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-medium text-red-900 dark:text-red-200">Analysis Failed</p>
-                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">{analysisError}</p>
+                    <p className="font-medium">Analysis Failed</p>
+                    <p className="text-sm mt-1">{analysisError}</p>
                   </div>
                 </div>
               )}
 
               {/* Results Review Panel */}
               {analysisResult && (
-                <div className="border border-purple-200 dark:border-purple-800 rounded-lg overflow-hidden">
-                  <div className="bg-purple-50 dark:bg-purple-900/20 px-4 py-3 border-b border-purple-200 dark:border-purple-800">
+                <div
+                  className="ui-style-result-card overflow-hidden"
+                  style={brandStyleResultCardStyle}
+                >
+                  <div className="px-4 py-3 border-b border-white">
                     <div className="flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-purple-600" />
-                      <h4 className="font-semibold text-purple-900 dark:text-purple-100">
+                      <CheckCircle className="w-5 h-5" />
+                      <h4 className="font-semibold">
                         Analysis Complete
                       </h4>
                     </div>
@@ -1165,54 +1143,57 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
                     {/* Style Settings */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-medium text-zinc-500 mb-1">Tone</label>
+                        <label className="block text-xs font-medium mb-1">Tone</label>
                         <p className="text-sm font-medium">
                           {tones.find(t => t.id === analysisResult.toneId)?.label || analysisResult.toneId}
                         </p>
-                        <div className="mt-1 h-1 bg-zinc-200 dark:bg-zinc-700 rounded">
+                        <div className="ui-style-confidence mt-1">
                           <div 
-                            className="h-full bg-purple-600 rounded" 
+                            className="ui-style-confidence-fill"
                             style={{ width: `${analysisResult.confidence.tone * 100}%` }}
                           />
                         </div>
                       </div>
                       
                       <div>
-                        <label className="block text-xs font-medium text-zinc-500 mb-1">Writing Style</label>
+                        <label className="block text-xs font-medium mb-1">Writing Style</label>
                         <p className="text-sm font-medium">
                           {writingStyles.find(s => s.id === analysisResult.writingStyleId)?.label || analysisResult.writingStyleId}
                         </p>
-                        <div className="mt-1 h-1 bg-zinc-200 dark:bg-zinc-700 rounded">
+                        <div className="ui-style-confidence mt-1">
                           <div 
-                            className="h-full bg-purple-600 rounded" 
+                            className="ui-style-confidence-fill"
                             style={{ width: `${analysisResult.confidence.style * 100}%` }}
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-zinc-500 mb-1">Perspective</label>
+                        <label className="block text-xs font-medium mb-1">Perspective</label>
                         <p className="text-sm font-medium">
                           {perspectives.find(p => p.id === analysisResult.perspectiveId)?.label || analysisResult.perspectiveId}
                         </p>
-                        <div className="mt-1 h-1 bg-zinc-200 dark:bg-zinc-700 rounded">
+                        <div className="ui-style-confidence mt-1">
                           <div 
-                            className="h-full bg-purple-600 rounded" 
+                            className="ui-style-confidence-fill"
                             style={{ width: `${analysisResult.confidence.perspective * 100}%` }}
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-zinc-500 mb-1">Complexity Level</label>
+                        <label className="block text-xs font-medium mb-1">Complexity Level</label>
                         <p className="text-sm font-medium">{analysisResult.complexityLevel}</p>
                       </div>
                     </div>
 
                     {/* Tone Description */}
                     <div>
-                      <label className="block text-xs font-medium text-zinc-500 mb-1">AI Description</label>
-                      <p className="text-sm text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded">
+                      <label className="block text-xs font-medium mb-1">AI Description</label>
+                      <p
+                        className="ui-style-result-card text-sm p-3"
+                        style={brandStyleResultCardStyle}
+                      >
                         {analysisResult.toneDescription}
                       </p>
                     </div>
@@ -1220,18 +1201,22 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
                     {/* Suggested Terms */}
                     {analysisResult.suggestedTerms.length > 0 && (
                       <div>
-                        <label className="block text-xs font-medium text-zinc-500 mb-2">
+                        <label className="block text-xs font-medium mb-2">
                           Suggested Dictionary Terms ({analysisResult.suggestedTerms.length})
                         </label>
-                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                        <div className="space-y-2">
                           {analysisResult.suggestedTerms.map((term, idx) => (
-                            <div key={idx} className="text-sm bg-zinc-50 dark:bg-zinc-800/50 p-2 rounded">
+                            <div
+                              key={idx}
+                              className="ui-style-result-card text-sm p-3"
+                              style={brandStyleResultCardStyle}
+                            >
                               <p className="font-medium">{term.term}</p>
                               {term.definition && (
-                                <p className="text-xs text-zinc-500 mt-0.5">{term.definition}</p>
+                                <p className="text-xs mt-0.5">{term.definition}</p>
                               )}
                               {term.usageGuidelines && (
-                                <p className="text-xs text-purple-600 dark:text-purple-400 mt-0.5">
+                                <p className="text-xs mt-0.5">
                                   {term.usageGuidelines}
                                 </p>
                               )}
@@ -1242,25 +1227,30 @@ export function StyleGuideEditor({ guide, initialDictionary }: StyleGuideEditorP
                     )}
 
                     {/* Action Buttons */}
-                    <div className="flex gap-2 pt-2">
+                    <div className="flex flex-wrap gap-2 pt-2">
                       <button
                         onClick={() => applyAnalysisResults(false)}
-                        className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors"
+                        className={`${brandInkButtonClassName} flex-1 px-4 py-2 text-sm`}
+                        style={brandInkButtonStyle}
                       >
                         Apply All
                       </button>
                       <button
                         onClick={() => applyAnalysisResults(true)}
-                        className="flex-1 bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 px-4 py-2 rounded-lg font-medium hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+                        type="button"
+                        className="ui-style-result-btn flex-1 px-4 py-2 rounded-lg font-medium"
+                        style={brandStyleResultBtnStyle}
                       >
                         Apply Settings Only
                       </button>
                       <button
+                        type="button"
                         onClick={() => {
                           setAnalysisResult(null);
                           setAnalysisError(null);
                         }}
-                        className="px-4 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300"
+                        className="ui-style-result-btn px-4 py-2 rounded-lg"
+                        style={brandStyleResultBtnStyle}
                       >
                         Cancel
                       </button>

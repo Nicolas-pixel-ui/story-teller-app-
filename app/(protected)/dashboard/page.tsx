@@ -58,6 +58,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     console.error("Failed to load style guides for dashboard", error);
   }
 
+  const styleGuideCount = styleGuides.length;
+
   // Determine greeting based on time of day
   const hour = new Date().getHours();
   let greeting = "Welcome back";
@@ -135,9 +137,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* Stats up front — including style guide count with the rest */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className={`${brandSurfaceCardClassName} p-6 flex items-center gap-4`} style={brandSurfaceCardStyle}>
             <div className="p-3 rounded-full bg-brand-seafoam/25 text-brand-teal dark:text-brand-yellow">
               <BookOpen className="h-6 w-6" />
@@ -167,11 +169,130 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <h3 className={`text-2xl font-bold ${brandSurfaceValueClassName}`} style={brandSurfaceValueStyle}>{stats.streak} Days</h3>
             </div>
           </div>
+
+          <div className={`${brandSurfaceCardClassName} p-6 flex items-center gap-4`} style={brandSurfaceCardStyle}>
+            <div className="p-3 rounded-full bg-brand-seafoam/25 text-brand-teal dark:text-brand-yellow">
+              <Palette className="h-6 w-6" />
+            </div>
+            <div>
+              <p className={`text-sm font-medium ${brandSurfaceLabelClassName}`} style={brandSurfaceLabelStyle}>Style Guides</p>
+              <h3 className={`text-2xl font-bold ${brandSurfaceValueClassName}`} style={brandSurfaceValueStyle}>{styleGuideCount}</h3>
+            </div>
+          </div>
         </div>
 
-        <div>
+        {/* Create story prompt — spaced below metrics */}
+        <div className="mt-12 rounded-xl border border-dashed border-brand-seafoam/50 bg-brand-cream/60 dark:bg-brand-ink/60 px-6 py-5 flex items-center gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-seafoam/20">
+            <BookOpen className="h-6 w-6 text-brand-teal dark:text-brand-seafoam" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-brand-ink dark:text-brand-yellow">
+              Create a new story
+            </h2>
+            <p className="mt-1 text-sm text-brand-ink/85 dark:text-brand-seafoam">
+              Open the story box and start writing with your style guide.
+            </p>
+          </div>
+        </div>
+
+        {/* Recent Activity Section */}
+        <div className="mt-6">
           <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-xl font-bold text-brand-ink dark:text-brand-yellow">Style Guides</h2>
+            <h2 className="text-xl font-bold text-brand-ink dark:text-brand-yellow">Recent Activity</h2>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+              <Link
+                href="/create-story"
+                className={`${brandPrimaryButtonClassName} px-3 py-2 text-sm font-semibold shadow-sm`}
+                style={brandPrimaryButtonStyle}
+              >
+                <Plus className="h-4 w-4" aria-hidden="true" />
+                Create Story
+              </Link>
+              <Link
+                href="/stories"
+                className="text-sm font-medium text-brand-ink/85 dark:text-brand-seafoam hover:text-brand-teal dark:hover:text-brand-yellow flex items-center gap-1"
+              >
+                View all stories
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+
+          {recentStories.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {recentStories.map((story) => (
+                <div
+                  key={story.id}
+                  className={`group ${brandSurfaceCardClassName} overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full`}
+                >
+                  <div className="p-6 flex-1">
+                    <div className="flex items-start justify-between mb-2">
+                      <span className="inline-flex items-center rounded-full border border-brand-seafoam/40 px-2.5 py-0.5 text-xs font-semibold text-brand-ink">
+                        {story.mode === 'quick' ? 'Quick Mode' : 'Comprehensive'}
+                      </span>
+                      <span className="text-xs text-brand-ink/80 flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {story.updatedAt
+                          ? new Date(story.updatedAt).toLocaleDateString()
+                          : "—"}
+                      </span>
+                    </div>
+
+                    <h3 className="text-lg font-bold text-brand-ink mb-2 line-clamp-1">
+                      {story.title || "Untitled Story"}
+                    </h3>
+
+                    <p className="text-sm text-brand-ink/85 line-clamp-3 mb-4">
+                      {story.description || "No description provided."}
+                    </p>
+                  </div>
+
+                  <div className="px-6 py-4 bg-brand-cream/60 dark:bg-brand-ink/60 border-t border-brand-seafoam/30 mt-auto">
+                    <Link
+                      href={`/stories/${story.id}`}
+                      className={`${brandSurfaceButtonClassName} w-auto border border-brand-seafoam/50 px-4 py-2 hover:opacity-90 transition-opacity`}
+                    >
+                      Continue Writing
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-brand-seafoam/50 bg-brand-cream/60 dark:bg-brand-ink/60 p-12 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-seafoam/20">
+                <BookOpen className="h-6 w-6 text-brand-teal dark:text-brand-seafoam" />
+              </div>
+              <h3 className="mt-2 text-sm font-semibold text-brand-ink dark:text-brand-yellow">No stories yet</h3>
+              <p className="mt-1 text-sm text-brand-ink/85 dark:text-brand-seafoam">
+                Get started by creating your first story today.
+              </p>
+              <div className="mt-6">
+                <Link
+                  href="/create-story"
+                  className={`${brandPrimaryButtonClassName} px-3 py-2 text-sm font-semibold shadow-sm`}
+                  style={brandPrimaryButtonStyle}
+                >
+                  <Plus className="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />
+                  Create Story
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Create Style Guides — below */}
+        <div className="mt-8">
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-brand-ink dark:text-brand-yellow">Style Guides</h2>
+              <p className="mt-1 text-sm text-brand-ink/85 dark:text-brand-seafoam">
+                {styleGuideCount === 1
+                  ? "You have made 1 style guide"
+                  : `You have made ${styleGuideCount} style guides`}
+              </p>
+            </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
               <CreateGuideButton
                 label="Create Style Guide"
@@ -242,91 +363,21 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               ))}
             </div>
           ) : (
-            <CreateStyleGuidePrompt />
-          )}
-        </div>
-
-        {/* Recent Activity Section */}
-        <div>
-          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-xl font-bold text-brand-ink dark:text-brand-yellow">Recent Activity</h2>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-              <Link
-                href="/create-story"
-                className={`${brandPrimaryButtonClassName} px-3 py-2 text-sm font-semibold shadow-sm`}
-                style={brandPrimaryButtonStyle}
-              >
-                <Plus className="h-4 w-4" aria-hidden="true" />
-                Create Story
-              </Link>
-              <Link
-                href="/stories"
-                className="text-sm font-medium text-brand-ink/85 dark:text-brand-seafoam hover:text-brand-teal dark:hover:text-brand-yellow flex items-center gap-1"
-              >
-                View all stories
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </div>
-
-          {recentStories.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recentStories.map((story) => (
-                <div 
-                  key={story.id} 
-                  className={`group ${brandSurfaceCardClassName} overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full`}
-                >
-                  <div className="p-6 flex-1">
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="inline-flex items-center rounded-full border border-brand-seafoam/40 px-2.5 py-0.5 text-xs font-semibold text-brand-ink">
-                        {story.mode === 'quick' ? 'Quick Mode' : 'Comprehensive'}
-                      </span>
-                      <span className="text-xs text-brand-ink/80 flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {story.updatedAt
-                          ? new Date(story.updatedAt).toLocaleDateString()
-                          : "—"}
-                      </span>
-                    </div>
-                    
-                    <h3 className="text-lg font-bold text-brand-ink mb-2 line-clamp-1">
-                      {story.title || "Untitled Story"}
-                    </h3>
-                    
-                    <p className="text-sm text-brand-ink/85 line-clamp-3 mb-4">
-                      {story.description || "No description provided."}
-                    </p>
-                  </div>
-                  
-                  <div className="px-6 py-4 bg-brand-cream/60 dark:bg-brand-ink/60 border-t border-brand-seafoam/30 mt-auto">
-                    <Link
-                      href={`/stories/${story.id}`}
-                      className={`${brandSurfaceButtonClassName} w-auto border border-brand-seafoam/50 px-4 py-2 hover:opacity-90 transition-opacity`}
-                    >
-                      Continue Writing
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
             <div className="rounded-xl border border-dashed border-brand-seafoam/50 bg-brand-cream/60 dark:bg-brand-ink/60 p-12 text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-seafoam/20">
-                <BookOpen className="h-6 w-6 text-brand-teal dark:text-brand-seafoam" />
+                <Palette className="h-6 w-6 text-brand-teal dark:text-brand-seafoam" />
               </div>
-              <h3 className="mt-2 text-sm font-semibold text-brand-ink dark:text-brand-yellow">No stories yet</h3>
+              <h3 className="mt-2 text-sm font-semibold text-brand-ink dark:text-brand-yellow">No style guides yet</h3>
               <p className="mt-1 text-sm text-brand-ink/85 dark:text-brand-seafoam">
-                Get started by creating your first story today.
+                Save a brand voice once, then reuse it on every story.
               </p>
-              <div className="mt-6">
-                <Link
-                  href="/create-story"
-                  className={`${brandPrimaryButtonClassName} px-3 py-2 text-sm font-semibold shadow-sm`}
+              <div className="mt-6 flex justify-center">
+                <CreateGuideButton
+                  label="Create Style Guide"
+                  creatingLabel="Creating..."
+                  className={`${brandPrimaryButtonClassName} px-3 py-2 text-sm font-semibold shadow-sm disabled:opacity-50`}
                   style={brandPrimaryButtonStyle}
-                >
-                  <Plus className="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />
-                  Create Story
-                </Link>
+                />
               </div>
             </div>
           )}
@@ -335,32 +386,3 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     </div>
   );
 }
-
-function CreateStyleGuidePrompt() {
-  return (
-    <div className="rounded-xl border border-dashed border-brand-seafoam/50 bg-brand-cream/60 dark:bg-brand-ink/60 p-12 text-center">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-seafoam/20">
-        <Palette className="h-6 w-6 text-brand-teal dark:text-brand-seafoam" />
-      </div>
-      <h3 className="mt-2 text-sm font-semibold text-brand-ink dark:text-brand-yellow">No style guides yet</h3>
-      <p className="mt-1 text-sm text-brand-ink/85 dark:text-brand-seafoam">
-        Save a brand voice once, then reuse it on every story.
-      </p>
-      <div className="mt-6 flex justify-center">
-        <CreateGuideButton
-          label="Create Style Guide"
-          creatingLabel="Creating..."
-          className={`${brandPrimaryButtonClassName} px-3 py-2 text-sm font-semibold shadow-sm disabled:opacity-50`}
-          style={brandPrimaryButtonStyle}
-        />
-      </div>
-    </div>
-  );
-}
-
-
-
-
-
-
-

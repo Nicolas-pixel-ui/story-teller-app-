@@ -51,8 +51,8 @@ export async function SiteHeader() {
         className="sticky top-0 z-30 border-b border-brand-seafoam/50 bg-brand-cream/90 backdrop-blur-sm dark:border-brand-seafoam/30 dark:bg-brand-ink/90"
         aria-label="Main"
       >
-        <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+        <div className="flex w-full items-center gap-3 py-2 pl-4 pr-2 sm:pl-6 sm:pr-3 lg:pl-8 lg:pr-3">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-4 sm:gap-6">
             <Link
               href="/"
               className="text-sm font-semibold text-brand-ink dark:text-brand-yellow hover:text-brand-teal dark:hover:text-brand-seafoam"
@@ -73,7 +73,7 @@ export async function SiteHeader() {
             )}
           </div>
           {user ? (
-            <div className="flex items-center gap-3">
+            <div className="ml-auto flex shrink-0 items-center justify-end gap-2">
               <Link
                 href="/settings#credits"
                 className="rounded-md border border-brand-seafoam/70 dark:border-brand-seafoam/40 bg-white/80 dark:bg-brand-ink/70 px-2.5 py-1 text-xs font-medium text-brand-ink dark:text-brand-seafoam hover:border-brand-teal hover:text-brand-teal dark:hover:text-brand-yellow"

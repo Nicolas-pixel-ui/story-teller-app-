@@ -5,6 +5,7 @@ import Link from "next/link";
 import { brandPrimaryButtonClassName, brandPrimaryButtonStyle, brandSurfaceButtonClassName, brandSurfaceCardClassName, brandSurfaceCardStyle, brandSurfaceLabelClassName, brandSurfaceLabelStyle, brandSurfaceValueClassName, brandSurfaceValueStyle } from "@/lib/ui/button-classes";
 import { BookOpen, PenTool, TrendingUp, Calendar, ArrowRight, Plus, Palette } from "lucide-react";
 import { getStyleGuidesForUser } from "../style-guide/actions";
+import { CreateGuideButton } from "../style-guide/create-guide-button";
 import { StyleGuideSelector } from "./style-guide-selector";
 import { getRequestUser } from "@/lib/auth/request-user";
 import { isBlogAdminUser } from "@/lib/blog/admin";
@@ -169,15 +170,23 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </div>
 
         <div>
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-xl font-bold text-brand-ink dark:text-brand-yellow">Style Guides</h2>
-            <Link
-              href="/style-guide"
-              className="text-sm font-medium text-brand-ink/85 dark:text-brand-seafoam hover:text-brand-teal dark:hover:text-brand-yellow flex items-center gap-1"
-            >
-              View all style guides
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+              <CreateGuideButton
+                label="Create Style Guide"
+                creatingLabel="Creating..."
+                className={`${brandPrimaryButtonClassName} px-3 py-2 text-sm font-semibold shadow-sm disabled:opacity-50`}
+                style={brandPrimaryButtonStyle}
+              />
+              <Link
+                href="/style-guide"
+                className="text-sm font-medium text-brand-ink/85 dark:text-brand-seafoam hover:text-brand-teal dark:hover:text-brand-yellow flex items-center gap-1"
+              >
+                View all style guides
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
 
           {styleGuides.length > 0 ? (
@@ -241,15 +250,13 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <p className="mt-1 text-sm text-brand-ink/85 dark:text-brand-seafoam">
                 Save a brand voice once, then reuse it on every story.
               </p>
-              <div className="mt-6">
-                <Link
-                  href="/style-guide"
-                  className={`${brandPrimaryButtonClassName} px-3 py-2 text-sm font-semibold shadow-sm`}
+              <div className="mt-6 flex justify-center">
+                <CreateGuideButton
+                  label="Create Style Guide"
+                  creatingLabel="Creating..."
+                  className={`${brandPrimaryButtonClassName} px-3 py-2 text-sm font-semibold shadow-sm disabled:opacity-50`}
                   style={brandPrimaryButtonStyle}
-                >
-                  <Plus className="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />
-                  Create Style Guide
-                </Link>
+                />
               </div>
             </div>
           )}
@@ -257,15 +264,25 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
         {/* Recent Activity Section */}
         <div>
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-xl font-bold text-brand-ink dark:text-brand-yellow">Recent Activity</h2>
-            <Link 
-              href="/stories" 
-              className="text-sm font-medium text-brand-ink/85 dark:text-brand-seafoam hover:text-brand-teal dark:hover:text-brand-yellow flex items-center gap-1"
-            >
-              View all stories
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+              <Link
+                href="/create-story"
+                className={`${brandPrimaryButtonClassName} px-3 py-2 text-sm font-semibold shadow-sm`}
+                style={brandPrimaryButtonStyle}
+              >
+                <Plus className="h-4 w-4" aria-hidden="true" />
+                Create Story
+              </Link>
+              <Link
+                href="/stories"
+                className="text-sm font-medium text-brand-ink/85 dark:text-brand-seafoam hover:text-brand-teal dark:hover:text-brand-yellow flex items-center gap-1"
+              >
+                View all stories
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
 
           {recentStories.length > 0 ? (

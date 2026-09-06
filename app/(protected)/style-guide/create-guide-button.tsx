@@ -1,12 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { createStyleGuide } from "./actions";
 import { brandInkButtonClassName, brandInkButtonStyle } from "@/lib/ui/button-classes";
 
-export function CreateGuideButton() {
+type CreateGuideButtonProps = {
+  className?: string;
+  style?: CSSProperties;
+  label?: string;
+  creatingLabel?: string;
+};
+
+export function CreateGuideButton({
+  className,
+  style,
+  label = "New Style Guide",
+  creatingLabel = "Creating...",
+}: CreateGuideButtonProps = {}) {
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
 
@@ -14,7 +26,7 @@ export function CreateGuideButton() {
     setIsCreating(true);
     const formData = new FormData();
     formData.append("name", "New Style Guide");
-    
+
     try {
       const guide = await createStyleGuide(formData);
       if (guide?.id) {
@@ -33,15 +45,14 @@ export function CreateGuideButton() {
     <button
       onClick={handleCreate}
       disabled={isCreating}
-      className={`${brandInkButtonClassName} px-4 py-2 text-sm disabled:opacity-50`}
-      style={brandInkButtonStyle}
+      className={
+        className ??
+        `${brandInkButtonClassName} px-4 py-2 text-sm disabled:opacity-50`
+      }
+      style={style ?? brandInkButtonStyle}
     >
-      <Plus className="w-4 h-4" />
-      {isCreating ? "Creating..." : "New Style Guide"}
+      <Plus className="w-4 h-4" aria-hidden="true" />
+      {isCreating ? creatingLabel : label}
     </button>
   );
 }
-
-
-
-

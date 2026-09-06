@@ -41,9 +41,7 @@ export const brandStatValueStyle: CSSProperties = {
 
 /** Inactive style-guide sidebar tab: white on ink, gold border (Brave-safe). */
 export const brandStyleTabStyle: CSSProperties = {
-  colorScheme: "dark",
   backgroundColor: INK,
-  backgroundImage: "none",
   border: `2px solid ${GOLD}`,
   color: WHITE,
   WebkitTextFillColor: WHITE,
@@ -51,9 +49,7 @@ export const brandStyleTabStyle: CSSProperties = {
 
 /** Active style-guide sidebar tab: white on gold. */
 export const brandStyleTabActiveStyle: CSSProperties = {
-  colorScheme: "dark",
   backgroundColor: GOLD,
-  backgroundImage: "none",
   border: `2px solid ${GOLD}`,
   color: WHITE,
   WebkitTextFillColor: WHITE,
@@ -61,18 +57,14 @@ export const brandStyleTabActiveStyle: CSSProperties = {
 
 /** Style-guide editor panel: white copy on ink. */
 export const brandStylePanelStyle: CSSProperties = {
-  colorScheme: "dark",
   backgroundColor: INK,
-  backgroundImage: "none",
   color: WHITE,
   WebkitTextFillColor: WHITE,
 };
 
 /** AI Import result cards: white copy on ink, white border (Brave-safe). */
 export const brandStyleResultCardStyle: CSSProperties = {
-  colorScheme: "dark",
   backgroundColor: INK,
-  backgroundImage: "none",
   color: WHITE,
   WebkitTextFillColor: WHITE,
   border: `1px solid ${WHITE}`,
@@ -80,9 +72,7 @@ export const brandStyleResultCardStyle: CSSProperties = {
 
 /** Secondary result actions: white label on ink, white border (Brave-safe). */
 export const brandStyleResultBtnStyle: CSSProperties = {
-  colorScheme: "dark",
   backgroundColor: INK,
-  backgroundImage: "none",
   color: WHITE,
   WebkitTextFillColor: WHITE,
   border: `1px solid ${WHITE}`,

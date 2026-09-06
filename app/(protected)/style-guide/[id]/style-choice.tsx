@@ -7,9 +7,7 @@ const WHITE = "#ffffff";
 const GOLD = "#9b7d2e";
 
 const shellStyle = {
-  colorScheme: "dark" as const,
   backgroundColor: INK,
-  backgroundImage: "none",
   color: WHITE,
   WebkitTextFillColor: WHITE,
 };

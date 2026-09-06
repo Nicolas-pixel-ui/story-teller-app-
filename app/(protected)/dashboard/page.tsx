@@ -331,28 +331,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             </div>
           )}
         </div>
-
-        <div className="rounded-xl border border-dashed border-brand-seafoam/50 bg-brand-cream/60 dark:bg-brand-ink/60 p-12 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-seafoam/20">
-            <BookOpen className="h-6 w-6 text-brand-teal dark:text-brand-seafoam" />
-          </div>
-          <h3 className="mt-2 text-sm font-semibold text-brand-ink dark:text-brand-yellow">
-            {recentStories.length > 0 ? "Create a Story" : "No stories yet"}
-          </h3>
-          <p className="mt-1 text-sm text-brand-ink/85 dark:text-brand-seafoam">
-            Get started by creating your first story today.
-          </p>
-          <div className="mt-6 flex justify-center">
-            <Link
-              href="/create-story"
-              className={`${brandPrimaryButtonClassName} px-3 py-2 text-sm font-semibold shadow-sm`}
-              style={brandPrimaryButtonStyle}
-            >
-              <Plus className="-ml-0.5 mr-1.5 h-5 w-5" aria-hidden="true" />
-              Create Story
-            </Link>
-          </div>
-        </div>
       </div>
     </div>
   );

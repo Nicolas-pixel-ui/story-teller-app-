@@ -15,6 +15,8 @@ import {
   resolveDatabaseConnectionUrl,
 } from "@/lib/db/runtime-env";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import { createClient } from "@/lib/supabase/server";
+import { isBlogAdminUser } from "@/lib/blog/admin";
 
 function poolingHint(
   pooling: PostgresUrlDiagnostics,
@@ -43,8 +45,16 @@ function poolingHint(
 
 export const dynamic = "force-dynamic";
 
-/** Lightweight DB probe for production debugging (no secrets in response). */
+/** Owner-only DB probe for production debugging (no secrets in response). */
 export async function GET() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user || !isBlogAdminUser(user.id, user.email)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { poolingUrl, databaseUrl } = getDatabaseUrlsFromRuntimeEnv();
   const { poolingRaw, databaseRaw } = getRawDatabaseUrlsFromRuntimeEnv();
   const configured = isRuntimeDatabaseConfigured();

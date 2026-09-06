@@ -4,6 +4,9 @@ import { db } from "@/lib/db";
 import { stories } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { generateStory } from "@/lib/ai/story-generator";
+import { consumeCredit, CREDITS_PER_AI_USE, getUserCreditBalance } from "@/lib/credits/service";
+import { isInsufficientCredits } from "@/lib/credits/redirect";
+import { INSUFFICIENT_CREDITS_PATH } from "@/lib/credits/constants";
 
 export async function GET() {
   try {
@@ -63,13 +66,36 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate full story content using Gemini AI
+    // Require credits before AI; debit only after a successful generation.
+    const balance = await getUserCreditBalance(user.id);
+    if (balance < CREDITS_PER_AI_USE) {
+      return NextResponse.json(
+        { error: "Insufficient credits", redirect: INSUFFICIENT_CREDITS_PATH },
+        { status: 402 }
+      );
+    }
+
     let generatedStory = description?.trim() || "";
+    let usedAi = false;
     try {
       generatedStory = await generateStory(title, description || "");
+      usedAi = Boolean(generatedStory?.trim()) && generatedStory.trim() !== (description?.trim() || "");
     } catch (aiError) {
       console.error("Error generating story via API, falling back to description:", aiError);
-      // Fallback to original description if AI fails
+    }
+
+    if (usedAi) {
+      const creditResult = await consumeCredit({
+        userId: user.id,
+        reason: "story_generate",
+        metadata: { title: title.trim() },
+      });
+      if (isInsufficientCredits(creditResult)) {
+        return NextResponse.json(
+          { error: "Insufficient credits", redirect: INSUFFICIENT_CREDITS_PATH },
+          { status: 402 }
+        );
+      }
     }
 
     const [newStory] = await db

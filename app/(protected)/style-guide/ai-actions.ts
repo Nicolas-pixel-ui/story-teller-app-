@@ -4,9 +4,9 @@
 // This prevents pdfjs-dist from being evaluated during module bundling
 
 import { createClient } from "@/lib/supabase/server";
-// DO NOT import from content-parser at top level - import dynamically to avoid analyzing PDF code
-// import { parseDOCX, parseText, parseURL, cleanText, truncateText } from "@/lib/ai/content-parser";
 import { analyzeStyleFromText, StyleAnalysisResult } from "@/lib/ai/style-analyzer";
+import { consumeCredit } from "@/lib/credits/service";
+import { isInsufficientCredits } from "@/lib/credits/redirect";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_TEXT_LENGTH = 50000; // ~50K characters for AI analysis
@@ -15,6 +15,26 @@ interface AnalysisResponse {
   success: boolean;
   data?: StyleAnalysisResult;
   error?: string;
+  insufficientCredits?: boolean;
+}
+
+async function debitAnalysisCredits(
+  userId: string,
+  reason: "style_analyze_document" | "style_analyze_url" | "style_analyze_text"
+): Promise<AnalysisResponse | null> {
+  try {
+    const creditResult = await consumeCredit({
+      userId,
+      reason,
+    });
+    if (isInsufficientCredits(creditResult)) {
+      return { success: false, error: "Insufficient credits", insufficientCredits: true };
+    }
+    return null;
+  } catch (error) {
+    console.error("[AI Actions] Credit debit failed:", error);
+    return { success: false, error: "Could not verify credits. Please try again." };
+  }
 }
 
 /**
@@ -164,6 +184,8 @@ export async function analyzeDocumentAction(
 
     // Analyze with AI
     console.log('[AI Actions] Starting AI analysis...');
+    const debitError = await debitAnalysisCredits(user.id, "style_analyze_document");
+    if (debitError) return debitError;
     const analysis = await analyzeStyleFromText(truncatedText);
     console.log('[AI Actions] AI analysis complete');
 
@@ -237,6 +259,8 @@ export async function analyzeUrlAction(url: string): Promise<AnalysisResponse> {
 
     // Analyze with AI
     console.log('[AI Actions] Starting AI analysis of URL content...');
+    const debitError = await debitAnalysisCredits(user.id, "style_analyze_url");
+    if (debitError) return debitError;
     const analysis = await analyzeStyleFromText(truncatedText);
     console.log('[AI Actions] URL analysis complete');
 
@@ -290,6 +314,8 @@ export async function analyzeTextAction(text: string): Promise<AnalysisResponse>
 
     // Analyze with AI
     console.log('[AI Actions] Starting AI analysis of text...');
+    const debitError = await debitAnalysisCredits(user.id, "style_analyze_text");
+    if (debitError) return debitError;
     const analysis = await analyzeStyleFromText(truncatedText);
     console.log('[AI Actions] Text analysis complete');
 

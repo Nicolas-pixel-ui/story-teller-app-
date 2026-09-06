@@ -4,7 +4,7 @@ import { selfReferencingCanonical } from "@/lib/seo/site-metadata";
 import Link from "next/link";
 import { brandPrimaryButtonClassName, brandPrimaryButtonStyle, brandSurfaceButtonClassName, brandSurfaceCardClassName, brandSurfaceCardStyle, brandSurfaceLabelClassName, brandSurfaceLabelStyle, brandSurfaceValueClassName, brandSurfaceValueStyle } from "@/lib/ui/button-classes";
 import { BookOpen, PenTool, TrendingUp, Calendar, ArrowRight, Plus, Palette } from "lucide-react";
-import { getStyleGuidesForUser } from "../style-guide/actions";
+import { getStyleGuidesForUser } from "@/lib/style-guide/queries";
 import { CreateGuideButton } from "../style-guide/create-guide-button";
 import { StyleGuideSelector } from "./style-guide-selector";
 import { getRequestUser } from "@/lib/auth/request-user";
@@ -273,7 +273,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           </div>
         </Link>
 
-        {/* Create Style Guides — below */}
+        {/* Style Guides */}
         <div className="mt-8">
           <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -349,15 +349,22 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-brand-seafoam/50 bg-brand-cream/60 dark:bg-brand-ink/60 p-12 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-seafoam/20">
-                <Palette className="h-6 w-6 text-brand-teal dark:text-brand-seafoam" />
-              </div>
-              <h3 className="mt-2 text-sm font-semibold text-brand-ink dark:text-brand-yellow">No style guides yet</h3>
-              <p className="mt-1 text-sm text-brand-ink/85 dark:text-brand-seafoam">
-                Save a brand voice once, then reuse it on every story.
-              </p>
-            </div>
+            <CreateGuideButton
+              className="w-full rounded-xl border border-dashed border-brand-seafoam/50 bg-brand-cream/60 dark:bg-brand-ink/60 p-12 text-center transition-colors hover:border-brand-teal/60 hover:bg-brand-cream dark:hover:bg-brand-ink/80 disabled:opacity-70"
+              style={{}}
+            >
+              <span className="flex flex-col items-center">
+                <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-seafoam/20">
+                  <Palette className="h-6 w-6 text-brand-teal dark:text-brand-seafoam" />
+                </span>
+                <span className="mt-2 text-sm font-semibold text-brand-ink dark:text-brand-yellow">
+                  No style guides yet
+                </span>
+                <span className="mt-1 text-sm font-normal text-brand-ink/85 dark:text-brand-seafoam">
+                  Save a brand voice once, then reuse it on every story.
+                </span>
+              </span>
+            </CreateGuideButton>
           )}
         </div>
       </div>

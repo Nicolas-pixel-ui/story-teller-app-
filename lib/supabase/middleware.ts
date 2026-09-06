@@ -37,7 +37,7 @@ function isPublicRoute(pathname: string): boolean {
     return true;
   }
   if (pathname === "/api/health/db") {
-    return true;
+    return false;
   }
   return publicRoutes.some((route) => {
     if (route === "/") {
@@ -87,6 +87,9 @@ export async function updateSession(request: NextRequest) {
     }
 
     const requestHeaders = new Headers(request.headers);
+    // Never trust client-supplied identity headers.
+    requestHeaders.delete("x-auth-user-id");
+    requestHeaders.delete("x-auth-user-email");
     let supabaseResponse = NextResponse.next({
       request: {
         headers: requestHeaders,
@@ -244,9 +247,32 @@ export async function updateSession(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("[MIDDLEWARE][UPDATE_SESSION_FAILED]", error);
+    const pathname = request.nextUrl.pathname;
+    // Fail closed: do not forward possibly spoofed client auth headers.
+    const safeHeaders = new Headers(request.headers);
+    safeHeaders.delete("x-auth-user-id");
+    safeHeaders.delete("x-auth-user-email");
+
+    if (request.headers.get("next-action")) {
+      return NextResponse.next({
+        request: { headers: safeHeaders },
+      });
+    }
+
+    if (!isPublicRoute(pathname)) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json({ error: "Unauthorized", status: 401 }, { status: 401 });
+      }
+      const url = request.nextUrl.clone();
+      url.pathname = AUTH_ROUTES.SIGN_IN;
+      url.searchParams.set("redirectedFrom", pathname);
+      url.searchParams.set("reason", "middleware-error");
+      return NextResponse.redirect(url);
+    }
+
     return NextResponse.next({
       request: {
-        headers: request.headers,
+        headers: safeHeaders,
       },
     });
   }

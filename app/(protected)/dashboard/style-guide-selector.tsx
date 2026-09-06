@@ -99,14 +99,17 @@ export function StyleGuideSelector({ styleGuides }: StyleGuideSelectorProps) {
               View all style guides
             </Link>
 
-            <Link
-              href="/style-guide"
-              className="flex w-full items-center gap-2 px-4 py-2 text-sm text-brand-orange hover:bg-brand-cream"
-              onClick={() => setIsOpen(false)}
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 px-4 py-2 text-sm text-brand-orange hover:bg-brand-cream text-left"
+              onClick={() => {
+                setIsOpen(false);
+                router.push("/style-guide");
+              }}
             >
               <Plus className="h-4 w-4" />
-              Create New Guide
-            </Link>
+              Manage style guides
+            </button>
           </div>
         </div>
       )}

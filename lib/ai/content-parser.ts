@@ -1,10 +1,8 @@
 // DO NOT import pdf-polyfills-init here - it will be imported dynamically when parsePDF is called
 // This prevents any PDF-related code from being evaluated during module bundling
 
-// #region agent log
-fetch('http://127.0.0.1:7242/ingest/712fc693-8823-4212-b37e-89ae6bcbbd97',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'content-parser.ts:1',message:'Module loaded',data:{hasProcess:typeof process!=='undefined',env:typeof process!=='undefined'?process.env.NODE_ENV:'unknown'},timestamp:Date.now(),sessionId:'debug-session',runId:'initial',hypothesisId:'A'})}).catch(()=>{});
-// #endregion
 import mammoth from "mammoth";
+import { assertSafePublicHttpUrl } from "@/lib/security/safe-url";
 
 export interface ParsedContent {
   text: string;
@@ -67,17 +65,15 @@ export function parseText(text: string): ParsedContent {
  */
 export async function parseURL(url: string): Promise<ParsedContent> {
   try {
-    // Validate URL format
-    const urlObj = new URL(url);
-    if (!['http:', 'https:'].includes(urlObj.protocol)) {
-      throw new Error("Only HTTP/HTTPS URLs are supported");
-    }
+    // Validate URL format and block private/metadata targets (SSRF).
+    assertSafePublicHttpUrl(url);
 
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; StoryTellerBot/1.0)',
       },
       signal: AbortSignal.timeout(10000), // 10 second timeout
+      redirect: "follow",
     });
 
     if (!response.ok) {

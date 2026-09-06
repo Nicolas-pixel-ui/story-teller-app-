@@ -41,9 +41,32 @@ export async function proxy(request: NextRequest) {
     return await updateSession(request);
   } catch (error) {
     console.error("[PROXY][MIDDLEWARE_FAILED]", error);
+    const pathname = request.nextUrl.pathname;
+    const safeHeaders = new Headers(request.headers);
+    safeHeaders.delete("x-auth-user-id");
+    safeHeaders.delete("x-auth-user-email");
+
+    const isLikelyPublic =
+      pathname === "/" ||
+      pathname.startsWith("/auth") ||
+      pathname.startsWith("/blog") ||
+      pathname.startsWith("/blogs") ||
+      pathname.startsWith("/feedback") ||
+      pathname.startsWith("/support");
+
+    if (!isLikelyPublic && !request.headers.get("next-action")) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json({ error: "Unauthorized", status: 401 }, { status: 401 });
+      }
+      const url = request.nextUrl.clone();
+      url.pathname = AUTH_ROUTES.SIGN_IN;
+      url.searchParams.set("reason", "proxy-error");
+      return NextResponse.redirect(url);
+    }
+
     return NextResponse.next({
       request: {
-        headers: request.headers,
+        headers: safeHeaders,
       },
     });
   }

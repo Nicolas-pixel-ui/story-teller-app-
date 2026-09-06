@@ -30,7 +30,10 @@ export type CreditConsumeReason =
   | "structure_beat_draft"
   | "structure_outline"
   | "structure_recommend"
-  | "map_analyze";
+  | "map_analyze"
+  | "style_analyze_document"
+  | "style_analyze_url"
+  | "style_analyze_text";
 
 type EnsureCreditRowInput = {
   userId: string;

@@ -9,8 +9,8 @@ import { storyCategories, StoryCategory, StoryType } from "@/lib/data/storyTypes
 import { eq, and } from "drizzle-orm";
 import { styleGuides } from "@/lib/db/schema";
 import { creditGate, redirectIfInsufficientCredits } from "@/lib/credits/redirect";
-import { consumeCredit } from "@/lib/credits/service";
-import { CREDIT_DEBIT_FAILED_MESSAGE } from "@/lib/credits/constants";
+import { consumeCredit, CREDITS_PER_AI_USE, getUserCreditBalance } from "@/lib/credits/service";
+import { CREDIT_DEBIT_FAILED_MESSAGE, INSUFFICIENT_CREDITS_PATH } from "@/lib/credits/constants";
 import { isNextRedirectError } from "@/lib/navigation/redirect-error";
 import { withTimeout } from "@/lib/ai/action-result";
 
@@ -217,24 +217,20 @@ export async function createStoryAction(
       }
     }
 
-    // 3. Debit 10 credits, save the story, then optionally generate AI text.
+    // 3. Save story first; require enough credits before AI; debit only after AI success.
     try {
-      const creditResult = await consumeCredit({
-        userId: user.id,
-        reason: "story_generate",
-        requestId: (formData.get("generationRequestId") as string | null) ?? undefined,
-        metadata: { title: title.trim() },
-      });
-      redirectIfInsufficientCredits(creditResult);
+      const balance = await getUserCreditBalance(user.id);
+      if (balance < CREDITS_PER_AI_USE) {
+        redirect(INSUFFICIENT_CREDITS_PATH);
+      }
     } catch (error) {
       if (isNextRedirectError(error)) {
         throw error;
       }
-      console.error("[story_generate] Credit debit failed:", error);
+      console.error("[story_generate] Credit balance check failed:", error);
       return { error: CREDIT_DEBIT_FAILED_MESSAGE };
     }
 
-    // Save the story first so Create Story does not depend on a slow Gemini call.
     const storyId = crypto.randomUUID();
     const userDescription = (description || "").trim();
 
@@ -273,6 +269,22 @@ export async function createStoryAction(
       );
       const generated = (generatedStory || "").trim();
       if (generated && generated !== userDescription && generated !== promptContext) {
+        try {
+          const creditResult = await consumeCredit({
+            userId: user.id,
+            reason: "story_generate",
+            requestId: (formData.get("generationRequestId") as string | null) ?? undefined,
+            metadata: { title: title.trim(), storyId },
+          });
+          redirectIfInsufficientCredits(creditResult);
+        } catch (error) {
+          if (isNextRedirectError(error)) {
+            throw error;
+          }
+          console.error("[story_generate] Credit debit failed after AI success:", error);
+          // Keep generated text even if debit fails — avoid stranding the user.
+        }
+
         await withTimeout(
           db
             .update(stories)

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { createStyleGuide } from "./actions";
@@ -11,6 +11,7 @@ type CreateGuideButtonProps = {
   style?: CSSProperties;
   label?: string;
   creatingLabel?: string;
+  children?: ReactNode;
 };
 
 export function CreateGuideButton({
@@ -18,11 +19,13 @@ export function CreateGuideButton({
   style,
   label = "New Style Guide",
   creatingLabel = "Creating...",
+  children,
 }: CreateGuideButtonProps = {}) {
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
 
   const handleCreate = async () => {
+    if (isCreating) return;
     setIsCreating(true);
     const formData = new FormData();
     formData.append("name", "New Style Guide");
@@ -33,6 +36,7 @@ export function CreateGuideButton({
         router.push(`/style-guide/${guide.id}?tab=ai-import`);
         return;
       }
+      alert("Failed to create style guide");
     } catch (error) {
       console.error("Failed to create guide", error);
       alert("Failed to create style guide");
@@ -43,6 +47,7 @@ export function CreateGuideButton({
 
   return (
     <button
+      type="button"
       onClick={handleCreate}
       disabled={isCreating}
       className={
@@ -51,8 +56,12 @@ export function CreateGuideButton({
       }
       style={style ?? brandInkButtonStyle}
     >
-      <Plus className="w-4 h-4" aria-hidden="true" />
-      {isCreating ? creatingLabel : label}
+      {children ?? (
+        <>
+          <Plus className="w-4 h-4" aria-hidden="true" />
+          {isCreating ? creatingLabel : label}
+        </>
+      )}
     </button>
   );
 }

@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { styleGuides, dictionaryEntries } from "@/lib/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { getStyleGuidesForUser } from "@/lib/style-guide/queries";
 
 export async function getStyleGuides() {
   const supabase = await createClient();
@@ -15,16 +16,6 @@ export async function getStyleGuides() {
   }
 
   return getStyleGuidesForUser(user.id);
-}
-
-export async function getStyleGuidesForUser(userId: string) {
-  const guides = await db
-    .select()
-    .from(styleGuides)
-    .where(eq(styleGuides.userId, userId))
-    .orderBy(desc(styleGuides.updatedAt));
-
-  return guides;
 }
 
 export async function createStyleGuide(formData: FormData) {
@@ -225,9 +216,16 @@ export async function deleteDictionaryEntry(id: string, styleGuideId: string) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Unauthorized");
 
-    // We rely on checking styleGuide access via linkage, but simpler to just delete by ID if we assume ID is UUID
-    // But better to be safe.
-    await db.delete(dictionaryEntries).where(eq(dictionaryEntries.id, id));
+    const guide = await db.query.styleGuides.findFirst({
+      where: and(eq(styleGuides.id, styleGuideId), eq(styleGuides.userId, user.id)),
+    });
+    if (!guide) throw new Error("Unauthorized");
+
+    await db
+      .delete(dictionaryEntries)
+      .where(
+        and(eq(dictionaryEntries.id, id), eq(dictionaryEntries.styleGuideId, styleGuideId))
+      );
     revalidatePath(`/style-guide/${styleGuideId}`);
 }
 
@@ -237,15 +235,32 @@ export async function updateDictionaryEntry(
 ) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  
+
   if (!user) throw new Error("Unauthorized");
-  
+
+  const existing = await db.query.dictionaryEntries.findFirst({
+    where: eq(dictionaryEntries.id, id),
+    columns: { id: true, styleGuideId: true },
+  });
+  if (!existing) throw new Error("Not found");
+
+  const guide = await db.query.styleGuides.findFirst({
+    where: and(
+      eq(styleGuides.id, existing.styleGuideId),
+      eq(styleGuides.userId, user.id)
+    ),
+  });
+  if (!guide) throw new Error("Unauthorized");
+
   await db.update(dictionaryEntries)
     .set({
       ...data,
+      // Never allow moving an entry to another guide via this path.
+      styleGuideId: existing.styleGuideId,
       updatedAt: new Date(),
     })
     .where(eq(dictionaryEntries.id, id));
-    
+
+  revalidatePath(`/style-guide/${existing.styleGuideId}`);
   revalidatePath(`/style-guide`);
 }

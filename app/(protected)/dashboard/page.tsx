@@ -139,7 +139,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Stats row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className={`${brandSurfaceCardClassName} p-6 flex items-center gap-4`} style={brandSurfaceCardStyle}>
             <div className="p-3 rounded-full bg-brand-seafoam/25 text-brand-teal dark:text-brand-yellow">
               <BookOpen className="h-6 w-6" />
@@ -167,6 +167,16 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             <div>
               <p className={`text-sm font-medium ${brandSurfaceLabelClassName}`} style={brandSurfaceLabelStyle}>Writing Streak</p>
               <h3 className={`text-2xl font-bold ${brandSurfaceValueClassName}`} style={brandSurfaceValueStyle}>{stats.streak} Days</h3>
+            </div>
+          </div>
+
+          <div className={`${brandSurfaceCardClassName} p-6 flex items-center gap-4`} style={brandSurfaceCardStyle}>
+            <div className="p-3 rounded-full bg-brand-orange/20 text-brand-orange dark:text-brand-yellow">
+              <Palette className="h-6 w-6" />
+            </div>
+            <div>
+              <p className={`text-sm font-medium ${brandSurfaceLabelClassName}`} style={brandSurfaceLabelStyle}>Style Guides</p>
+              <h3 className={`text-2xl font-bold ${brandSurfaceValueClassName}`} style={brandSurfaceValueStyle}>{styleGuideCount}</h3>
             </div>
           </div>
         </div>

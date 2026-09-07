@@ -281,7 +281,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             <div>
               <div className="flex items-center gap-3">
                 <h2 className="text-xl font-bold text-brand-ink dark:text-brand-yellow">Style Guides</h2>
-                <span className="inline-flex min-w-8 items-center justify-center rounded-full border border-brand-seafoam/40 bg-brand-cream/80 px-2.5 py-0.5 text-sm font-bold tabular-nums text-brand-ink dark:border-brand-seafoam/30 dark:bg-brand-ink/70 dark:text-brand-yellow">
+                <span className="inline-flex min-w-8 items-center justify-center rounded-full border border-brand-seafoam/50 bg-brand-cream px-2.5 py-0.5 text-sm font-bold tabular-nums text-brand-ink dark:border-brand-seafoam/40 dark:bg-brand-ink/70 dark:text-brand-yellow">
                   {styleGuideCount}
                 </span>
               </div>

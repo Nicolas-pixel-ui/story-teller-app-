@@ -58,6 +58,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     console.error("Failed to load style guides for dashboard", error);
   }
 
+  const styleGuideCount = styleGuides.length;
+
   // Determine greeting based on time of day
   const hour = new Date().getHours();
   let greeting = "Welcome back";
@@ -277,7 +279,17 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         <div className="mt-8">
           <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-xl font-bold text-brand-ink dark:text-brand-yellow">Style Guides</h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-bold text-brand-ink dark:text-brand-yellow">Style Guides</h2>
+                <span className="inline-flex min-w-8 items-center justify-center rounded-full border border-brand-seafoam/40 bg-brand-cream/80 px-2.5 py-0.5 text-sm font-bold tabular-nums text-brand-ink dark:border-brand-seafoam/30 dark:bg-brand-ink/70 dark:text-brand-yellow">
+                  {styleGuideCount}
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-brand-ink/85 dark:text-brand-seafoam">
+                {styleGuideCount === 1
+                  ? "You have made 1 style guide"
+                  : `You have made ${styleGuideCount} style guides`}
+              </p>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
               <CreateGuideButton

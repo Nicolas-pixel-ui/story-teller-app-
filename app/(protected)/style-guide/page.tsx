@@ -14,17 +14,31 @@ export default async function StyleGuidePage() {
       <div className="relative z-10 container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1
-              className="text-3xl font-bold tracking-tight mb-2"
-              style={{ color: "#faf7ef", WebkitTextFillColor: "#faf7ef" }}
-            >
-              Style Guides
-            </h1>
+            <div className="mb-2 flex items-center gap-3">
+              <h1
+                className="text-3xl font-bold tracking-tight"
+                style={{ color: "#faf7ef", WebkitTextFillColor: "#faf7ef" }}
+              >
+                Style Guides
+              </h1>
+              <span
+                className="inline-flex min-w-8 items-center justify-center rounded-full border px-2.5 py-0.5 text-sm font-bold tabular-nums"
+                style={{
+                  borderColor: "rgba(250, 247, 239, 0.35)",
+                  color: "#faf7ef",
+                  WebkitTextFillColor: "#faf7ef",
+                }}
+              >
+                {guides.length}
+              </span>
+            </div>
             <p
               className="text-sm"
               style={{ color: "#faf7ef", WebkitTextFillColor: "#faf7ef" }}
             >
-              Manage your brand voice, tone, and visual identity across all stories.
+              {guides.length === 1
+                ? "You have made 1 style guide"
+                : `You have made ${guides.length} style guides`}
             </p>
           </div>
           <CreateGuideButton />

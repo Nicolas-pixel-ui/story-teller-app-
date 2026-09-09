@@ -1,4 +1,14 @@
+import { sql } from "drizzle-orm";
 import { pgTable, uuid, text, timestamp, pgSchema, jsonb, integer, numeric, boolean } from "drizzle-orm/pg-core";
+import type {
+  ColorSwatch,
+  LogoAsset,
+  SocialChannels,
+  TargetAudience,
+  TypographySpec,
+  ValueProposition,
+  WritingRule,
+} from "../style-guide/types";
 
 // Define the auth schema to reference auth.users
 const authSchema = pgSchema("auth");
@@ -30,24 +40,57 @@ export const styleGuides = pgTable("style_guides", {
     .references(() => authUsers.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   isDefault: boolean("is_default").default(false),
-  
+
+  // Metadata & Permissions
+  title: text("title").notNull().default(""),
+  clientOrBrandName: text("client_or_brand_name").notNull().default(""),
+  tagline: text("tagline"),
+  isPublic: boolean("is_public").default(false).notNull(),
+  shareToken: text("share_token").unique(),
+  status: text("status").$type<"draft" | "active" | "archived">().default("draft").notNull(),
+
   // Core Attributes
   toneId: text("tone_id"),
   writingStyleId: text("writing_style_id"),
   perspectiveId: text("perspective_id"),
-  
+
   // Enhanced Attributes
   toneDescription: text("tone_description"),
   complexityLevel: text("complexity_level"),
-  
-  // Visuals
+
+  // Core Narrative & Positioning
+  missionStatement: text("mission_statement"),
+  valuePropositions: jsonb("value_propositions").$type<ValueProposition[]>().default([]),
+  targetAudiences: jsonb("target_audiences").$type<TargetAudience[]>().default([]),
+
+  // Brand Voice & Copywriting
+  toneAttributes: jsonb("tone_attributes").$type<string[]>().default([]),
+  writingRules: jsonb("writing_rules").$type<WritingRule[]>().default([]),
+  preferredVocabulary: text("preferred_vocabulary")
+    .array()
+    .$type<string[]>()
+    .default(sql`ARRAY[]::text[]`),
+  bannedWords: text("banned_words")
+    .array()
+    .$type<string[]>()
+    .default(sql`ARRAY[]::text[]`),
+
+  // Visual Identity & Creative Specs
   primaryColor: text("primary_color"),
   secondaryColor: text("secondary_color"),
   tertiaryColor: text("tertiary_color"),
   accentColor: text("accent_color"),
   fontHeading: text("font_heading"),
   fontBody: text("font_body"),
-  
+  colorPalette: jsonb("color_palette").$type<ColorSwatch[]>().default([]),
+  typography: jsonb("typography").$type<TypographySpec>().default({}),
+  logoAssets: jsonb("logo_assets").$type<LogoAsset[]>().default([]),
+  imageryGuidelines: text("imagery_guidelines"),
+
+  // Advertising & Channel-Specific Guardrails
+  socialChannels: jsonb("social_channels").$type<SocialChannels>().default({}),
+  legalDisclaimers: text("legal_disclaimers"),
+
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });

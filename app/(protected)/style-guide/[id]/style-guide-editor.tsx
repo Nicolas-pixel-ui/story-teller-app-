@@ -1,15 +1,24 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Save, Plus, Trash2, Upload, Link as LinkIcon, FileText, Sparkles, Loader2, CheckCircle, XCircle, Copy, Check } from "lucide-react";
-import { updateStyleGuide, addDictionaryEntry, deleteDictionaryEntry, updateDictionaryEntry } from "../actions";
+import { updateStyleGuide, addDictionaryEntry, deleteDictionaryEntry, updateDictionaryEntry, setStyleGuideSharing } from "../actions";
 import { analyzeDocumentAction, analyzeUrlAction, analyzeTextAction } from "../ai-actions";
 import { tones, writingStyles, perspectives } from "@/lib/data/styleOptions";
 import { InferSelectModel } from "drizzle-orm";
 import { styleGuides, dictionaryEntries } from "@/lib/db/schema";
 import { StyleAnalysisResult, formatMarketingIdeasForGuide, mergeToneDescriptionWithIdeas } from "@/lib/ai/style-analyzer";
 import { BraveMenuSelect, StyleChoiceList } from "./style-choice";
+import {
+  BrandMetadataFields,
+  ChannelFields,
+  ExtraVisualFields,
+  NarrativeFields,
+  SharingFields,
+  VoiceFields,
+} from "./brand-fields-editor";
+import { styleGuideDisplayName } from "@/lib/style-guide/types";
 import {
   brandInkButtonClassName,
   brandInkButtonStyle,
@@ -29,8 +38,10 @@ type DictionaryEntry = InferSelectModel<typeof dictionaryEntries>;
 interface StyleGuideEditorProps {
   guide: StyleGuide;
   initialDictionary: DictionaryEntry[];
-  initialTab?: "overview" | "visuals" | "dictionary" | "ai-import";
+  initialTab?: EditorTab;
 }
+
+type EditorTab = "overview" | "narrative" | "voice" | "visuals" | "channels" | "dictionary" | "ai-import";
 
 const COMPLEXITY_LEVELS = [
   "Elementary (6th Grade)",
@@ -169,9 +180,10 @@ const COLOR_PALETTES = [
 ];
 
 export function StyleGuideEditor({ guide, initialDictionary, initialTab = "overview" }: StyleGuideEditorProps) {
-  const [activeTab, setActiveTab] = useState<"overview" | "visuals" | "dictionary" | "ai-import">(initialTab);
+  const [activeTab, setActiveTab] = useState<EditorTab>(initialTab);
   const [isSaving, startTransition] = useTransition();
   const [formData, setFormData] = useState(guide);
+  const [shareOrigin, setShareOrigin] = useState("");
 
   // Dictionary State
   const [dictionary, setDictionary] = useState(initialDictionary);
@@ -206,9 +218,33 @@ export function StyleGuideEditor({ guide, initialDictionary, initialTab = "overv
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    setShareOrigin(window.location.origin);
+  }, []);
+
   const handleSave = () => {
     startTransition(async () => {
-      await updateStyleGuide(guide.id, formData);
+      await updateStyleGuide(guide.id, {
+        ...formData,
+        name: formData.title || formData.name,
+        title: formData.title || formData.name,
+        typography: {
+          primary_font: formData.fontBody || undefined,
+          heading_font: formData.fontHeading || undefined,
+          weights: [400, 700],
+        },
+      });
+    });
+  };
+
+  const handleSharing = (next: boolean) => {
+    startTransition(async () => {
+      const result = await setStyleGuideSharing(guide.id, next);
+      setFormData((current) => ({
+        ...current,
+        isPublic: result.isPublic,
+        shareToken: result.shareToken,
+      }));
     });
   };
 
@@ -301,10 +337,20 @@ export function StyleGuideEditor({ guide, initialDictionary, initialTab = "overv
       secondaryColor: palette.colors.secondary,
       tertiaryColor: palette.colors.tertiary,
       accentColor: palette.colors.accent,
-      });
+      colorPalette: [
+        { name: "Primary", hex: palette.colors.primary, role: "Primary" },
+        { name: "Secondary", hex: palette.colors.secondary, role: "Secondary" },
+        { name: "Tertiary", hex: palette.colors.tertiary, role: "Tertiary" },
+        { name: "Accent", hex: palette.colors.accent, role: "Accent" },
+      ],
+    });
   };
 
-  const handleChange = (field: keyof StyleGuide, value: any) => {
+  const handleChange = (field: keyof StyleGuide, value: unknown) => {
+    if (field === "title" && typeof value === "string") {
+      setFormData({ ...formData, title: value, name: value });
+      return;
+    }
     setFormData({ ...formData, [field]: value });
   };
 
@@ -506,7 +552,7 @@ export function StyleGuideEditor({ guide, initialDictionary, initialTab = "overv
               className="text-2xl font-bold"
               style={{ color: "#faf7ef", WebkitTextFillColor: "#faf7ef" }}
             >
-              {formData.name}
+              {styleGuideDisplayName(formData)}
             </h1>
             <p
               className="text-sm"
@@ -540,11 +586,35 @@ export function StyleGuideEditor({ guide, initialDictionary, initialTab = "overv
           </button>
           <button
             type="button"
+            onClick={() => setActiveTab("narrative")}
+            className={activeTab === "narrative" ? brandStyleTabActiveClassName : brandStyleTabClassName}
+            style={activeTab === "narrative" ? brandStyleTabActiveStyle : brandStyleTabStyle}
+          >
+            Narrative
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("voice")}
+            className={activeTab === "voice" ? brandStyleTabActiveClassName : brandStyleTabClassName}
+            style={activeTab === "voice" ? brandStyleTabActiveStyle : brandStyleTabStyle}
+          >
+            Voice & Copy
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab("visuals")}
             className={activeTab === "visuals" ? brandStyleTabActiveClassName : brandStyleTabClassName}
             style={activeTab === "visuals" ? brandStyleTabActiveStyle : brandStyleTabStyle}
           >
             Visual Identity
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("channels")}
+            className={activeTab === "channels" ? brandStyleTabActiveClassName : brandStyleTabClassName}
+            style={activeTab === "channels" ? brandStyleTabActiveStyle : brandStyleTabStyle}
+          >
+            Channels
           </button>
           <button
             type="button"
@@ -574,15 +644,17 @@ export function StyleGuideEditor({ guide, initialDictionary, initialTab = "overv
         >
           {activeTab === "overview" && (
             <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">Guide Name</label>
-                <input
-                  type="text"
-                  value={formData.name || ""}
-                  onChange={(e) => handleChange("name", e.target.value)}
-                  className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
-                />
-              </div>
+              <BrandMetadataFields formData={formData} onChange={handleChange} />
+              <SharingFields
+                isPublic={Boolean(formData.isPublic)}
+                shareUrl={
+                  formData.isPublic && formData.shareToken && shareOrigin
+                    ? `${shareOrigin}/g/${formData.shareToken}`
+                    : null
+                }
+                isSaving={isSaving}
+                onToggle={handleSharing}
+              />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <StyleChoiceList
@@ -752,7 +824,20 @@ export function StyleGuideEditor({ guide, initialDictionary, initialTab = "overv
                   />
                 </div>
               </div>
+              <ExtraVisualFields formData={formData} onChange={handleChange} />
             </div>
+          )}
+
+          {activeTab === "narrative" && (
+            <NarrativeFields formData={formData} onChange={handleChange} />
+          )}
+
+          {activeTab === "voice" && (
+            <VoiceFields formData={formData} onChange={handleChange} />
+          )}
+
+          {activeTab === "channels" && (
+            <ChannelFields formData={formData} onChange={handleChange} />
           )}
 
           {activeTab === "dictionary" && (

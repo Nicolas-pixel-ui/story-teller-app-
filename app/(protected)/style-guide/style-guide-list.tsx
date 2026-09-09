@@ -52,10 +52,14 @@ function StyleGuideCard({ guide }: { guide: StyleGuide }) {
     >
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h3 className="font-semibold text-lg mb-1">{guide.name}</h3>
+          <h3 className="font-semibold text-lg mb-1">{guide.title || guide.name}</h3>
           <p className="text-xs" style={{ color: "#faf7ef", WebkitTextFillColor: "#faf7ef" }}>
+            {guide.clientOrBrandName ? `${guide.clientOrBrandName} · ` : ""}
             <UpdatedAtLabel value={guide.updatedAt} />
           </p>
+          {guide.status ? (
+            <p className="mt-1 text-xs capitalize opacity-80">{guide.status}{guide.isPublic ? " · shared" : ""}</p>
+          ) : null}
         </div>
         <div className="flex gap-1">
            <button

@@ -36,6 +36,9 @@ function isPublicRoute(pathname: string): boolean {
   if (pathname === "/support-agent" || pathname.startsWith("/support-agent/")) {
     return true;
   }
+  if (pathname === "/g" || pathname.startsWith("/g/")) {
+    return true;
+  }
   if (pathname === "/api/health/db") {
     return false;
   }

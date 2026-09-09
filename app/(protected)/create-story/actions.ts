@@ -7,6 +7,8 @@ import { stories, users } from "@/lib/db/schema";
 import { generateStory, generateHooks } from "@/lib/ai/story-generator";
 import { storyCategories, StoryCategory, StoryType } from "@/lib/data/storyTypes";
 import { eq, and } from "drizzle-orm";
+import type { InferSelectModel } from "drizzle-orm";
+import { formatStyleGuidePromptBlock, snapshotStyleGuidePreferences } from "@/lib/style-guide/prompt";
 import { styleGuides } from "@/lib/db/schema";
 import { creditGate, redirectIfInsufficientCredits } from "@/lib/credits/redirect";
 import { consumeCredit, CREDITS_PER_AI_USE, getUserCreditBalance } from "@/lib/credits/service";
@@ -135,24 +137,17 @@ export async function createStoryAction(
       backgroundInfo: formData.get("backgroundInfo") as string,
       customInstructions: formData.get("customInstructions") as string,
     };
+    let selectedGuide: InferSelectModel<typeof styleGuides> | undefined;
 
     if (styleGuideId) {
-       const guide = await db.query.styleGuides.findFirst({
+       selectedGuide = await db.query.styleGuides.findFirst({
          where: and(eq(styleGuides.id, styleGuideId), eq(styleGuides.userId, user.id))
        });
 
-       if (guide) {
+       if (selectedGuide) {
          stylePreferences = {
            ...stylePreferences,
-           tone: guide.toneId,
-           style: guide.writingStyleId,
-           perspective: guide.perspectiveId,
-           complexityLevel: guide.complexityLevel,
-           primaryColor: guide.primaryColor,
-           secondaryColor: guide.secondaryColor,
-           fontHeading: guide.fontHeading,
-           fontBody: guide.fontBody,
-           toneDescription: guide.toneDescription,
+           ...snapshotStyleGuidePreferences(selectedGuide),
          };
        }
     }
@@ -198,6 +193,7 @@ export async function createStoryAction(
     if (stylePreferences.complexityLevel) promptContext += `\nTarget Audience/Complexity: ${stylePreferences.complexityLevel}`;
     if (stylePreferences.customInstructions) promptContext += `\nInstructions: ${stylePreferences.customInstructions}`;
     if (stylePreferences.backgroundInfo) promptContext += `\nWorld/Background Info: ${stylePreferences.backgroundInfo}`;
+    if (selectedGuide) promptContext += formatStyleGuidePromptBlock(selectedGuide);
 
     let hooksData = null;
     if (selectedHookData) {

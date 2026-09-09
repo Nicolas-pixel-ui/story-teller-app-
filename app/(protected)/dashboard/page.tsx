@@ -336,7 +336,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                       </span>
                     </div>
                     <h3 className="text-lg font-bold text-brand-ink mb-2 line-clamp-1">
-                      {guide.name || "Untitled Style Guide"}
+                      {guide.title || guide.name || "Untitled Style Guide"}
                     </h3>
                     <p className="text-sm text-brand-ink/85 line-clamp-3 mb-4">
                       {guide.toneDescription?.trim() ||

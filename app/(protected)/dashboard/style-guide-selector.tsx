@@ -75,7 +75,7 @@ export function StyleGuideSelector({ styleGuides }: StyleGuideSelectorProps) {
                   >
                     <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-brand-teal" />
                     <span className="min-w-0 flex flex-col">
-                      <span className="truncate font-medium">{guide.name}</span>
+                      <span className="truncate font-medium">{guide.title || guide.name}</span>
                       <span className="truncate text-xs text-brand-ink/60">
                         {guide.toneId?.replace("_", " ") || "No tone"}
                         {guide.updatedAt ? ` · ${formatUpdatedAt(guide.updatedAt)}` : ""}

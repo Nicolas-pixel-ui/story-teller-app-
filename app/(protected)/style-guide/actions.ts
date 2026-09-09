@@ -1,11 +1,150 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { styleGuides, dictionaryEntries } from "@/lib/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getStyleGuidesForUser } from "@/lib/style-guide/queries";
+import {
+  asColorPalette,
+  asLogoAssets,
+  asSocialChannels,
+  asStringArray,
+  asTargetAudiences,
+  asTypography,
+  asValuePropositions,
+  asWritingRules,
+  isStyleGuideStatus,
+  type StyleGuideStatus,
+} from "@/lib/style-guide/types";
+
+type StyleGuideInsert = typeof styleGuides.$inferInsert;
+
+const UPDATABLE_KEYS = [
+  "name",
+  "title",
+  "clientOrBrandName",
+  "tagline",
+  "isPublic",
+  "status",
+  "isDefault",
+  "toneId",
+  "writingStyleId",
+  "perspectiveId",
+  "toneDescription",
+  "complexityLevel",
+  "missionStatement",
+  "valuePropositions",
+  "targetAudiences",
+  "toneAttributes",
+  "writingRules",
+  "preferredVocabulary",
+  "bannedWords",
+  "primaryColor",
+  "secondaryColor",
+  "tertiaryColor",
+  "accentColor",
+  "fontHeading",
+  "fontBody",
+  "colorPalette",
+  "typography",
+  "logoAssets",
+  "imageryGuidelines",
+  "socialChannels",
+  "legalDisclaimers",
+] as const;
+
+function generateShareToken() {
+  return randomBytes(18).toString("base64url");
+}
+
+function sanitizeStyleGuidePatch(data: Record<string, unknown>): Partial<StyleGuideInsert> {
+  const patch: Partial<StyleGuideInsert> = {};
+
+  for (const key of UPDATABLE_KEYS) {
+    if (!(key in data)) continue;
+    const value = data[key];
+
+    switch (key) {
+      case "name":
+      case "title":
+      case "clientOrBrandName":
+        if (typeof value === "string") patch[key] = value;
+        break;
+      case "tagline":
+      case "toneId":
+      case "writingStyleId":
+      case "perspectiveId":
+      case "toneDescription":
+      case "complexityLevel":
+      case "missionStatement":
+      case "primaryColor":
+      case "secondaryColor":
+      case "tertiaryColor":
+      case "accentColor":
+      case "fontHeading":
+      case "fontBody":
+      case "imageryGuidelines":
+      case "legalDisclaimers":
+        patch[key] = typeof value === "string" ? value : value == null ? null : String(value);
+        break;
+      case "isPublic":
+      case "isDefault":
+        patch[key] = Boolean(value);
+        break;
+      case "status":
+        if (isStyleGuideStatus(value)) patch.status = value;
+        break;
+      case "valuePropositions":
+        patch.valuePropositions = asValuePropositions(value);
+        break;
+      case "targetAudiences":
+        patch.targetAudiences = asTargetAudiences(value);
+        break;
+      case "toneAttributes":
+        patch.toneAttributes = asStringArray(value);
+        break;
+      case "writingRules":
+        patch.writingRules = asWritingRules(value);
+        break;
+      case "preferredVocabulary":
+        patch.preferredVocabulary = asStringArray(value);
+        break;
+      case "bannedWords":
+        patch.bannedWords = asStringArray(value);
+        break;
+      case "colorPalette":
+        patch.colorPalette = asColorPalette(value);
+        break;
+      case "typography":
+        patch.typography = asTypography(value);
+        break;
+      case "logoAssets":
+        patch.logoAssets = asLogoAssets(value);
+        break;
+      case "socialChannels":
+        patch.socialChannels = asSocialChannels(value);
+        break;
+      default:
+        break;
+    }
+  }
+
+  const title = (patch.title ?? (typeof data.title === "string" ? data.title : "")).trim();
+  const name = (patch.name ?? (typeof data.name === "string" ? data.name : "")).trim();
+  const displayName = title || name;
+  if (displayName) {
+    patch.title = displayName;
+    patch.name = displayName;
+  }
+  if (typeof patch.clientOrBrandName === "string") {
+    patch.clientOrBrandName = patch.clientOrBrandName.trim() || displayName || patch.clientOrBrandName;
+  }
+
+  return patch;
+}
 
 export async function getStyleGuides() {
   const supabase = await createClient();
@@ -32,10 +171,13 @@ export async function createStyleGuide(formData: FormData) {
   const newGuide = await db.insert(styleGuides).values({
     userId: user.id,
     name: uniqueName,
+    title: uniqueName,
+    clientOrBrandName: uniqueName,
+    status: "draft",
+    isPublic: false,
     toneId: "neutral",
     writingStyleId: "standard",
     perspectiveId: "third_limited",
-    // Defaults
     complexityLevel: "High School",
     primaryColor: "#000000",
     secondaryColor: "#ffffff",
@@ -69,7 +211,6 @@ export async function deleteStyleGuide(id: string) {
 
   if (!user) throw new Error("Unauthorized");
 
-  // Verify ownership
   const guide = await db.query.styleGuides.findFirst({
     where: and(eq(styleGuides.id, id), eq(styleGuides.userId, user.id)),
   });
@@ -93,26 +234,34 @@ export async function duplicateStyleGuide(id: string) {
 
   if (!guide) throw new Error("Style guide not found");
 
-  const { id: _, createdAt, updatedAt, name, ...rest } = guide;
+  const { id: _id, createdAt, updatedAt, name, title, shareToken: _shareToken, ...rest } = guide;
+  const copyName = await uniqueStyleGuideName(user.id, `${title || name} (Copy)`);
 
   const newGuide = await db.insert(styleGuides).values({
     ...rest,
-    name: await uniqueStyleGuideName(user.id, `${name} (Copy)`),
+    name: copyName,
+    title: copyName,
+    clientOrBrandName: rest.clientOrBrandName || copyName,
+    isPublic: false,
+    shareToken: null,
+    status: (rest.status as StyleGuideStatus | undefined) || "draft",
   }).returning();
 
-  // Copy dictionary entries if we had them (not yet implemented in create, but good for future)
   const entries = await db.query.dictionaryEntries.findMany({
     where: eq(dictionaryEntries.styleGuideId, id),
   });
 
   if (entries.length > 0) {
     await db.insert(dictionaryEntries).values(
-      entries.map(e => ({
+      entries.map((entry) => ({
         styleGuideId: newGuide[0].id,
-        term: e.term,
-        definition: e.definition,
-        usageGuidelines: e.usageGuidelines,
-        category: e.category,
+        term: entry.term,
+        definition: entry.definition,
+        usageGuidelines: entry.usageGuidelines,
+        category: entry.category,
+        termType: entry.termType,
+        importance: entry.importance,
+        usageFrequency: entry.usageFrequency,
       }))
     );
   }
@@ -122,42 +271,31 @@ export async function duplicateStyleGuide(id: string) {
 }
 
 export async function getStyleGuide(id: string) {
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/712fc693-8823-4212-b37e-89ae6bcbbd97',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'actions.ts:getStyleGuide',message:'getStyleGuide entry',data:{id},timestamp:Date.now(),sessionId:'debug-session',runId:'initial',hypothesisId:'C'})}).catch(()=>{});
-  // #endregion
-  const supabase = await createClient();
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/712fc693-8823-4212-b37e-89ae6bcbbd97',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'actions.ts:getStyleGuide',message:'Before getUser call',data:{hasSupabase:!!supabase},timestamp:Date.now(),sessionId:'debug-session',runId:'initial',hypothesisId:'C'})}).catch(()=>{});
-  // #endregion
-  const { data: { user }, error } = await supabase.auth.getUser();
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/712fc693-8823-4212-b37e-89ae6bcbbd97',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'actions.ts:getStyleGuide',message:'After getUser call',data:{hasUser:!!user,hasError:!!error,errorCode:error?.code,errorMessage:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'initial',hypothesisId:'C'})}).catch(()=>{});
-  // #endregion
-
-  if (!user) throw new Error("Unauthorized");
-
-  const guide = await db.query.styleGuides.findFirst({
-    where: and(eq(styleGuides.id, id), eq(styleGuides.userId, user.id)),
-  });
-
-  return guide;
-}
-
-export async function updateStyleGuide(id: string, data: Partial<typeof styleGuides.$inferInsert>) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) throw new Error("Unauthorized");
 
-  // Verify ownership
+  return db.query.styleGuides.findFirst({
+    where: and(eq(styleGuides.id, id), eq(styleGuides.userId, user.id)),
+  });
+}
+
+export async function updateStyleGuide(id: string, data: Partial<StyleGuideInsert> | Record<string, unknown>) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Unauthorized");
+
   const guide = await db.query.styleGuides.findFirst({
     where: and(eq(styleGuides.id, id), eq(styleGuides.userId, user.id)),
   });
 
   if (!guide) throw new Error("Unauthorized");
 
+  const patch = sanitizeStyleGuidePatch(data as Record<string, unknown>);
   await db.update(styleGuides)
-    .set({ ...data, updatedAt: new Date() })
+    .set({ ...patch, updatedAt: new Date() })
     .where(eq(styleGuides.id, id));
 
   revalidatePath(`/style-guide/${id}`);
@@ -165,68 +303,97 @@ export async function updateStyleGuide(id: string, data: Partial<typeof styleGui
   revalidatePath("/dashboard");
 }
 
-export async function getDictionaryEntries(styleGuideId: string) {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/712fc693-8823-4212-b37e-89ae6bcbbd97',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'actions.ts:getDictionaryEntries',message:'getDictionaryEntries entry',data:{styleGuideId},timestamp:Date.now(),sessionId:'debug-session',runId:'initial',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
-    const supabase = await createClient();
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/712fc693-8823-4212-b37e-89ae6bcbbd97',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'actions.ts:getDictionaryEntries',message:'Before getUser call',data:{hasSupabase:!!supabase},timestamp:Date.now(),sessionId:'debug-session',runId:'initial',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
-    const { data: { user }, error } = await supabase.auth.getUser();
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/712fc693-8823-4212-b37e-89ae6bcbbd97',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'actions.ts:getDictionaryEntries',message:'After getUser call',data:{hasUser:!!user,hasError:!!error,errorCode:error?.code,errorMessage:error?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'initial',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
-  
-    if (!user) throw new Error("Unauthorized");
-    
-    // Check access to style guide
-    const guide = await db.query.styleGuides.findFirst({
-        where: and(eq(styleGuides.id, styleGuideId), eq(styleGuides.userId, user.id)),
-    });
-    if (!guide) throw new Error("Unauthorized");
+export async function setStyleGuideSharing(id: string, isPublic: boolean) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-    return await db.query.dictionaryEntries.findMany({
-        where: eq(dictionaryEntries.styleGuideId, styleGuideId),
-        orderBy: [desc(dictionaryEntries.createdAt)],
-    });
+  if (!user) throw new Error("Unauthorized");
+
+  const guide = await db.query.styleGuides.findFirst({
+    where: and(eq(styleGuides.id, id), eq(styleGuides.userId, user.id)),
+  });
+  if (!guide) throw new Error("Unauthorized");
+
+  let shareToken = guide.shareToken;
+  if (isPublic && !shareToken) {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const candidate = generateShareToken();
+      try {
+        const [updated] = await db.update(styleGuides)
+          .set({ isPublic: true, shareToken: candidate, updatedAt: new Date() })
+          .where(eq(styleGuides.id, id))
+          .returning({ shareToken: styleGuides.shareToken, isPublic: styleGuides.isPublic });
+        revalidatePath(`/style-guide/${id}`);
+        revalidatePath("/style-guide");
+        return updated;
+      } catch {
+        // Unique token collision — retry with a new token.
+      }
+    }
+    throw new Error("Could not create a share link. Please try again.");
+  }
+
+  const [updated] = await db.update(styleGuides)
+    .set({ isPublic, shareToken, updatedAt: new Date() })
+    .where(eq(styleGuides.id, id))
+    .returning({ shareToken: styleGuides.shareToken, isPublic: styleGuides.isPublic });
+
+  revalidatePath(`/style-guide/${id}`);
+  revalidatePath("/style-guide");
+  return updated;
+}
+
+export async function getDictionaryEntries(styleGuideId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Unauthorized");
+
+  const guide = await db.query.styleGuides.findFirst({
+    where: and(eq(styleGuides.id, styleGuideId), eq(styleGuides.userId, user.id)),
+  });
+  if (!guide) throw new Error("Unauthorized");
+
+  return await db.query.dictionaryEntries.findMany({
+    where: eq(dictionaryEntries.styleGuideId, styleGuideId),
+    orderBy: [desc(dictionaryEntries.createdAt)],
+  });
 }
 
 export async function addDictionaryEntry(styleGuideId: string, entry: typeof dictionaryEntries.$inferInsert) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-  
-    if (!user) throw new Error("Unauthorized");
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-     // Check access
-     const guide = await db.query.styleGuides.findFirst({
-        where: and(eq(styleGuides.id, styleGuideId), eq(styleGuides.userId, user.id)),
-    });
-    if (!guide) throw new Error("Unauthorized");
+  if (!user) throw new Error("Unauthorized");
 
-    await db.insert(dictionaryEntries).values({
-        ...entry,
-        styleGuideId,
-    });
-    revalidatePath(`/style-guide/${styleGuideId}`);
+  const guide = await db.query.styleGuides.findFirst({
+    where: and(eq(styleGuides.id, styleGuideId), eq(styleGuides.userId, user.id)),
+  });
+  if (!guide) throw new Error("Unauthorized");
+
+  await db.insert(dictionaryEntries).values({
+    ...entry,
+    styleGuideId,
+  });
+  revalidatePath(`/style-guide/${styleGuideId}`);
 }
 
 export async function deleteDictionaryEntry(id: string, styleGuideId: string) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
 
-    const guide = await db.query.styleGuides.findFirst({
-      where: and(eq(styleGuides.id, styleGuideId), eq(styleGuides.userId, user.id)),
-    });
-    if (!guide) throw new Error("Unauthorized");
+  const guide = await db.query.styleGuides.findFirst({
+    where: and(eq(styleGuides.id, styleGuideId), eq(styleGuides.userId, user.id)),
+  });
+  if (!guide) throw new Error("Unauthorized");
 
-    await db
-      .delete(dictionaryEntries)
-      .where(
-        and(eq(dictionaryEntries.id, id), eq(dictionaryEntries.styleGuideId, styleGuideId))
-      );
-    revalidatePath(`/style-guide/${styleGuideId}`);
+  await db
+    .delete(dictionaryEntries)
+    .where(
+      and(eq(dictionaryEntries.id, id), eq(dictionaryEntries.styleGuideId, styleGuideId))
+    );
+  revalidatePath(`/style-guide/${styleGuideId}`);
 }
 
 export async function updateDictionaryEntry(
@@ -255,7 +422,6 @@ export async function updateDictionaryEntry(
   await db.update(dictionaryEntries)
     .set({
       ...data,
-      // Never allow moving an entry to another guide via this path.
       styleGuideId: existing.styleGuideId,
       updatedAt: new Date(),
     })

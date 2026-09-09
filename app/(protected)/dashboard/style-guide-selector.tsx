@@ -6,7 +6,6 @@ import Link from "next/link";
 import { BookOpen, ChevronDown, Plus, Palette } from "lucide-react";
 import { InferSelectModel } from "drizzle-orm";
 import { styleGuides } from "@/lib/db/schema";
-import { useRouter } from "next/navigation";
 
 interface StyleGuideSelectorProps {
   styleGuides: InferSelectModel<typeof styleGuides>[];
@@ -21,7 +20,6 @@ function formatUpdatedAt(value: Date | string) {
 export function StyleGuideSelector({ styleGuides }: StyleGuideSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -35,11 +33,6 @@ export function StyleGuideSelector({ styleGuides }: StyleGuideSelectorProps) {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  const handleSelect = (guideId: string) => {
-    router.push(`/style-guide/${guideId}`);
-    setIsOpen(false);
-  };
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -68,9 +61,10 @@ export function StyleGuideSelector({ styleGuides }: StyleGuideSelectorProps) {
             {styleGuides.length > 0 ? (
               <div className="max-h-72 overflow-y-auto">
                 {styleGuides.map((guide) => (
-                  <button
+                  <Link
                     key={guide.id}
-                    onClick={() => handleSelect(guide.id)}
+                    href={`/style-guide/${guide.id}`}
+                    onClick={() => setIsOpen(false)}
                     className="flex w-full items-start gap-2 px-4 py-2 text-sm text-brand-ink hover:bg-brand-cream text-left"
                   >
                     <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-brand-teal" />
@@ -81,7 +75,7 @@ export function StyleGuideSelector({ styleGuides }: StyleGuideSelectorProps) {
                         {guide.updatedAt ? ` · ${formatUpdatedAt(guide.updatedAt)}` : ""}
                       </span>
                     </span>
-                  </button>
+                  </Link>
                 ))}
               </div>
             ) : (
@@ -99,17 +93,14 @@ export function StyleGuideSelector({ styleGuides }: StyleGuideSelectorProps) {
               View all style guides
             </Link>
 
-            <button
-              type="button"
+            <Link
+              href="/style-guide"
               className="flex w-full items-center gap-2 px-4 py-2 text-sm text-brand-orange hover:bg-brand-cream text-left"
-              onClick={() => {
-                setIsOpen(false);
-                router.push("/style-guide");
-              }}
+              onClick={() => setIsOpen(false)}
             >
               <Plus className="h-4 w-4" />
               Manage style guides
-            </button>
+            </Link>
           </div>
         </div>
       )}

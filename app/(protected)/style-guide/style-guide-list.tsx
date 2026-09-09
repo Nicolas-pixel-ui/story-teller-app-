@@ -30,6 +30,7 @@ export function StyleGuideList({ initialGuides }: StyleGuideListProps) {
 
 function StyleGuideCard({ guide }: { guide: StyleGuide }) {
   const [isPending, startTransition] = useTransition();
+  const displayName = guide.title || guide.name || "Untitled Style Guide";
 
   const handleDelete = () => {
     if (confirm("Are you sure you want to delete this style guide?")) {
@@ -47,22 +48,42 @@ function StyleGuideCard({ guide }: { guide: StyleGuide }) {
 
   return (
     <div
-      className="group relative rounded-xl p-6 ui-style-panel"
+      className="group relative rounded-xl p-6 ui-style-panel transition-opacity hover:opacity-95"
       style={{ backgroundColor: "#1d2e3f", color: "#faf7ef", WebkitTextFillColor: "#faf7ef", border: "1px solid #faf7ef" }}
     >
+      <Link
+        href={`/style-guide/${guide.id}`}
+        className="absolute inset-0 z-0 rounded-xl"
+        aria-label={`Open ${displayName}`}
+      />
       <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="font-semibold text-lg mb-1">{guide.title || guide.name}</h3>
+        <div className="min-w-0 pr-2">
+          <h3 className="font-semibold text-lg mb-1 group-hover:underline">{displayName}</h3>
           <p className="text-xs" style={{ color: "#faf7ef", WebkitTextFillColor: "#faf7ef" }}>
             {guide.clientOrBrandName ? `${guide.clientOrBrandName} · ` : ""}
             <UpdatedAtLabel value={guide.updatedAt} />
           </p>
           {guide.status ? (
-            <p className="mt-1 text-xs capitalize opacity-80">{guide.status}{guide.isPublic ? " · shared" : ""}</p>
+            <p className="mt-1 text-xs capitalize opacity-80">
+              {guide.status}
+              {guide.isPublic ? " · shared" : ""}
+            </p>
+          ) : null}
+          {guide.isPublic && guide.shareToken ? (
+            <Link
+              href={`/g/${guide.shareToken}`}
+              target="_blank"
+              rel="noreferrer"
+              className="relative z-10 mt-1 inline-block text-xs underline opacity-80"
+              onClick={(event) => event.stopPropagation()}
+            >
+              Open view-only link
+            </Link>
           ) : null}
         </div>
-        <div className="flex gap-1">
+        <div className="relative z-10 flex gap-1">
            <button
+             type="button"
              onClick={handleDuplicate}
              disabled={isPending}
              className="p-2 transition-colors"
@@ -72,6 +93,7 @@ function StyleGuideCard({ guide }: { guide: StyleGuide }) {
              <Copy className="w-4 h-4" />
            </button>
            <button
+             type="button"
              onClick={handleDelete}
              disabled={isPending}
              className="p-2 text-zinc-400 hover:text-red-600 transition-colors"
@@ -109,13 +131,12 @@ function StyleGuideCard({ guide }: { guide: StyleGuide }) {
           )}
         </div>
         
-        <Link
-          href={`/style-guide/${guide.id}`}
-          className="text-sm font-medium flex items-center gap-1"
+        <span
+          className="relative z-10 text-sm font-medium flex items-center gap-1"
           style={{ color: "#faf7ef", WebkitTextFillColor: "#faf7ef" }}
         >
           Edit Guide <Edit2 className="w-3 h-3" />
-        </Link>
+        </span>
       </div>
     </div>
   );
@@ -139,8 +160,3 @@ function UpdatedAtLabel({ value }: { value: Date | string }) {
 
   return <time dateTime={iso}>Updated {label}</time>;
 }
-
-
-
-
-

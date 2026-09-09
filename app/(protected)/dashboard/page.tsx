@@ -321,8 +321,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           {styleGuides.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {styleGuides.map((guide) => (
-                <div
+                <Link
                   key={guide.id}
+                  href={`/style-guide/${guide.id}`}
                   className={`group ${brandSurfaceCardClassName} overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full`}
                 >
                   <div className="p-6 flex-1">
@@ -335,7 +336,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                         {guide.updatedAt ? new Date(guide.updatedAt).toLocaleDateString() : "—"}
                       </span>
                     </div>
-                    <h3 className="text-lg font-bold text-brand-ink mb-2 line-clamp-1">
+                    <h3 className="text-lg font-bold text-brand-ink mb-2 line-clamp-1 group-hover:underline">
                       {guide.title || guide.name || "Untitled Style Guide"}
                     </h3>
                     <p className="text-sm text-brand-ink/85 line-clamp-3 mb-4">
@@ -360,14 +361,13 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                     </div>
                   </div>
                   <div className="px-6 py-4 bg-brand-cream/60 dark:bg-brand-ink/60 border-t border-brand-seafoam/30 mt-auto">
-                    <Link
-                      href={`/style-guide/${guide.id}`}
-                      className={`${brandSurfaceButtonClassName} w-auto border border-brand-seafoam/50 px-4 py-2 hover:opacity-90 transition-opacity`}
+                    <span
+                      className={`${brandSurfaceButtonClassName} w-auto border border-brand-seafoam/50 px-4 py-2`}
                     >
                       Open Guide
-                    </Link>
+                    </span>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (

@@ -120,6 +120,13 @@
       "when": 1777500000000,
       "tag": "0077_style_guides_brand_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1777600000000,
+      "tag": "0078_usage_admin_stories_vs_style_guides",
+      "breakpoints": true
     }
   ]
 }

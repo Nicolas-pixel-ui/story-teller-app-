@@ -87,10 +87,10 @@ export function dashboardDataLoadWarning(
 export function adminMetricsLoadWarning(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   if (message.toLowerCase().includes("forbidden") || message.includes("42501")) {
-    return "Could not load usage metrics. Sign in as nicolas@hartmanns.net, then run DB migration 0072 on Supabase (pnpm db:migrate) and redeploy.";
+    return "Could not load usage metrics. Sign in as nicolas@hartmanns.net, then run DB migration 0078 on Supabase (pnpm db:migrate) and redeploy.";
   }
   if (message.includes("get_usage_admin_stats") || message.includes("PGRST202")) {
-    return "Could not load usage metrics. Apply migration 0072_usage_admin_stats_rpc.sql on production (pnpm db:migrate locally), then redeploy Vercel.";
+    return "Could not load usage metrics. Apply migration 0078_usage_admin_stories_vs_style_guides.sql on production (pnpm db:migrate locally), then redeploy Vercel.";
   }
   if (message.includes("SUPABASE_SERVICE_ROLE_KEY")) {
     return `Could not load usage metrics. ${message} Or fix POOLING_DATABASE_URL on Vercel (pnpm db:copy-env-vercel pooling → paste → redeploy).`;

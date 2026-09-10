@@ -7,29 +7,18 @@ import {
   getRecentSignupsViaSupabase,
 } from "./usage-queries-supabase";
 import { USAGE_METRICS_EXCLUDED_EMAILS } from "./usage-excluded-accounts";
+import {
+  mapAdminUsageStatsRow,
+  type AdminUsageStats,
+  type RecentSignup,
+} from "./usage-stats";
 
-export type AdminUsageStats = {
-  totalUsers: number;
-  newUsers7d: number;
-  newUsers30d: number;
-  activeUsers24h: number;
-  activeUsers7d: number;
-  activeUsers30d: number;
-  recentlyOnlineUsers: number;
-  totalStories: number;
-  totalAiGenerations: number;
-  aiGenerations7d: number;
-};
-
-export type RecentSignup = {
-  id: string;
-  email: string;
-  createdAt: Date;
-};
-
-function toCount(value: unknown): number {
-  return Number(value ?? 0);
-}
+export {
+  EMPTY_ADMIN_USAGE_STATS,
+  mapAdminUsageStatsRow,
+  type AdminUsageStats,
+  type RecentSignup,
+} from "./usage-stats";
 
 /** `auth.users` rows minus the owner/test accounts hidden from metrics. */
 const countedUsers = sql`(
@@ -39,29 +28,36 @@ const countedUsers = sql`(
 )`;
 
 async function getAdminUsageStatsViaPostgres(): Promise<AdminUsageStats> {
-  const [row] = await db.execute<{
-    total_users: string;
-    new_users_7d: string;
-    new_users_30d: string;
-    active_users_24h: string;
-    active_users_7d: string;
-    active_users_30d: string;
-    recently_online_users: string;
-    total_stories: string;
-    total_ai_generations: string;
-    ai_generations_7d: string;
-  }>(sql`
+  const [row] = await db.execute<Record<string, unknown>>(sql`
+    WITH counted AS (
+      SELECT id, created_at, last_sign_in_at, email FROM ${countedUsers} u
+    ),
+    story_users AS (
+      SELECT DISTINCT s.user_id
+      FROM public.stories s
+      WHERE s.user_id IN (SELECT id FROM counted)
+    ),
+    style_guide_users AS (
+      SELECT DISTINCT g.user_id
+      FROM public.style_guides g
+      WHERE g.user_id IN (SELECT id FROM counted)
+    ),
+    both_users AS (
+      SELECT user_id FROM story_users
+      INTERSECT
+      SELECT user_id FROM style_guide_users
+    )
     SELECT
-      (SELECT count(*)::int FROM ${countedUsers} u) AS total_users,
-      (SELECT count(*)::int FROM ${countedUsers} u WHERE u.created_at >= now() - interval '7 days') AS new_users_7d,
-      (SELECT count(*)::int FROM ${countedUsers} u WHERE u.created_at >= now() - interval '30 days') AS new_users_30d,
+      (SELECT count(*)::int FROM counted) AS total_users,
+      (SELECT count(*)::int FROM counted WHERE created_at >= now() - interval '7 days') AS new_users_7d,
+      (SELECT count(*)::int FROM counted WHERE created_at >= now() - interval '30 days') AS new_users_30d,
       (
         SELECT count(DISTINCT user_id)::int FROM (
           SELECT user_id FROM public.stories WHERE updated_at >= now() - interval '24 hours'
           UNION
           SELECT user_id FROM public.credit_transactions WHERE created_at >= now() - interval '24 hours'
         ) active
-        WHERE user_id IN (SELECT id FROM ${countedUsers} u)
+        WHERE user_id IN (SELECT id FROM counted)
       ) AS active_users_24h,
       (
         SELECT count(DISTINCT user_id)::int FROM (
@@ -69,7 +65,7 @@ async function getAdminUsageStatsViaPostgres(): Promise<AdminUsageStats> {
           UNION
           SELECT user_id FROM public.credit_transactions WHERE created_at >= now() - interval '7 days'
         ) active
-        WHERE user_id IN (SELECT id FROM ${countedUsers} u)
+        WHERE user_id IN (SELECT id FROM counted)
       ) AS active_users_7d,
       (
         SELECT count(DISTINCT user_id)::int FROM (
@@ -77,32 +73,76 @@ async function getAdminUsageStatsViaPostgres(): Promise<AdminUsageStats> {
           UNION
           SELECT user_id FROM public.credit_transactions WHERE created_at >= now() - interval '30 days'
         ) active
-        WHERE user_id IN (SELECT id FROM ${countedUsers} u)
+        WHERE user_id IN (SELECT id FROM counted)
       ) AS active_users_30d,
       (
-        SELECT count(*)::int FROM ${countedUsers} u
-        WHERE u.last_sign_in_at >= now() - interval '15 minutes'
+        SELECT count(*)::int FROM counted
+        WHERE last_sign_in_at >= now() - interval '15 minutes'
       ) AS recently_online_users,
       (SELECT count(*)::int FROM public.stories) AS total_stories,
       (SELECT count(*)::int FROM public.credit_transactions WHERE type = 'debit') AS total_ai_generations,
       (
         SELECT count(*)::int FROM public.credit_transactions
         WHERE type = 'debit' AND created_at >= now() - interval '7 days'
-      ) AS ai_generations_7d
+      ) AS ai_generations_7d,
+      (SELECT count(*)::int FROM story_users) AS users_with_stories,
+      (SELECT count(*)::int FROM style_guide_users) AS users_with_style_guides,
+      (SELECT count(*)::int FROM both_users) AS users_with_both,
+      (
+        SELECT count(*)::int FROM story_users
+        WHERE user_id NOT IN (SELECT user_id FROM style_guide_users)
+      ) AS users_stories_only,
+      (
+        SELECT count(*)::int FROM style_guide_users
+        WHERE user_id NOT IN (SELECT user_id FROM story_users)
+      ) AS users_style_guides_only,
+      (
+        (SELECT count(*)::int FROM counted)
+        - (
+          SELECT count(DISTINCT user_id)::int FROM (
+            SELECT user_id FROM story_users
+            UNION
+            SELECT user_id FROM style_guide_users
+          ) product_users
+        )
+      ) AS users_with_neither,
+      (SELECT count(*)::int FROM public.style_guides) AS total_style_guides,
+      (
+        SELECT count(*)::int FROM public.stories WHERE style_guide_id IS NOT NULL
+      ) AS stories_that_used_style_guide,
+      (
+        SELECT count(DISTINCT user_id)::int FROM public.stories
+        WHERE user_id IN (SELECT id FROM counted)
+          AND (created_at >= now() - interval '7 days' OR updated_at >= now() - interval '7 days')
+      ) AS story_users_7d,
+      (
+        SELECT count(DISTINCT user_id)::int FROM public.style_guides
+        WHERE user_id IN (SELECT id FROM counted)
+          AND (created_at >= now() - interval '7 days' OR updated_at >= now() - interval '7 days')
+      ) AS style_guide_users_7d,
+      (
+        SELECT count(*)::int FROM public.credit_transactions
+        WHERE type = 'debit' AND reason NOT LIKE 'style_analyze_%'
+      ) AS story_ai_generations,
+      (
+        SELECT count(*)::int FROM public.credit_transactions
+        WHERE type = 'debit' AND reason LIKE 'style_analyze_%'
+      ) AS style_guide_ai_generations,
+      (
+        SELECT count(*)::int FROM public.credit_transactions
+        WHERE type = 'debit'
+          AND reason NOT LIKE 'style_analyze_%'
+          AND created_at >= now() - interval '7 days'
+      ) AS story_ai_generations_7d,
+      (
+        SELECT count(*)::int FROM public.credit_transactions
+        WHERE type = 'debit'
+          AND reason LIKE 'style_analyze_%'
+          AND created_at >= now() - interval '7 days'
+      ) AS style_guide_ai_generations_7d
   `);
 
-  return {
-    totalUsers: toCount(row?.total_users),
-    newUsers7d: toCount(row?.new_users_7d),
-    newUsers30d: toCount(row?.new_users_30d),
-    activeUsers24h: toCount(row?.active_users_24h),
-    activeUsers7d: toCount(row?.active_users_7d),
-    activeUsers30d: toCount(row?.active_users_30d),
-    recentlyOnlineUsers: toCount(row?.recently_online_users),
-    totalStories: toCount(row?.total_stories),
-    totalAiGenerations: toCount(row?.total_ai_generations),
-    aiGenerations7d: toCount(row?.ai_generations_7d),
-  };
+  return mapAdminUsageStatsRow(row);
 }
 
 async function getRecentSignupsViaPostgres(limit = 15): Promise<RecentSignup[]> {

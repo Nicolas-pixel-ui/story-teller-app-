@@ -1,7 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
 import { getSupabaseClientForAdminOperations } from "@/lib/db/supabase-fallback";
-import type { AdminUsageStats, RecentSignup } from "./usage-queries";
+import {
+  mapAdminUsageStatsRow,
+  type AdminUsageStats,
+  type RecentSignup,
+} from "./usage-stats";
 import { isExcludedFromUsageMetrics } from "./usage-excluded-accounts";
 
 function daysAgoIso(days: number): string {
@@ -86,22 +90,24 @@ async function listUsersForMetrics(supabase: SupabaseClient): Promise<ListedUser
   return users.filter((u) => !isExcludedFromUsageMetrics(u.email));
 }
 
-async function distinctUserIdsSince(
+type UserIdPage = {
+  data: { user_id?: string | null }[] | null;
+  error: { message: string } | null;
+};
+
+async function paginatedUserIds(
   supabase: SupabaseClient,
-  table: "stories" | "credit_transactions",
-  sinceIso: string
+  table: "stories" | "credit_transactions" | "style_guides",
+  applyFilters: (query: any) => any
 ): Promise<Set<string>> {
   const ids = new Set<string>();
   const pageSize = 1000;
   let from = 0;
 
   while (true) {
-    const dateColumn = table === "stories" ? "updated_at" : "created_at";
-    const { data, error } = await supabase
-      .from(table)
-      .select("user_id")
-      .gte(dateColumn, sinceIso)
-      .range(from, from + pageSize - 1);
+    const { data, error }: UserIdPage = await applyFilters(
+      supabase.from(table).select("user_id")
+    ).range(from, from + pageSize - 1);
 
     if (error) {
       throw error;
@@ -123,6 +129,27 @@ async function distinctUserIdsSince(
   return ids;
 }
 
+async function distinctUserIdsSince(
+  supabase: SupabaseClient,
+  table: "stories" | "credit_transactions" | "style_guides",
+  sinceIso: string,
+  dateColumn: "updated_at" | "created_at" | "created_or_updated" = "created_at"
+): Promise<Set<string>> {
+  return paginatedUserIds(supabase, table, (query) => {
+    if (dateColumn === "created_or_updated") {
+      return query.or(`created_at.gte.${sinceIso},updated_at.gte.${sinceIso}`);
+    }
+    return query.gte(dateColumn, sinceIso);
+  });
+}
+
+async function distinctUserIdsAll(
+  supabase: SupabaseClient,
+  table: "stories" | "style_guides"
+): Promise<Set<string>> {
+  return paginatedUserIds(supabase, table, (query) => query);
+}
+
 function mergeActiveUserCounts(countedUserIds: Set<string>, ...sets: Set<string>[]): number {
   const merged = new Set<string>();
   for (const set of sets) {
@@ -135,9 +162,68 @@ function mergeActiveUserCounts(countedUserIds: Set<string>, ...sets: Set<string>
   return merged.size;
 }
 
+function intersectSize(a: Set<string>, b: Set<string>): number {
+  let count = 0;
+  for (const id of a) {
+    if (b.has(id)) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+function rpcHasProductSplit(row: Record<string, unknown>): boolean {
+  return (
+    "users_with_stories" in row &&
+    "users_with_style_guides" in row &&
+    "total_style_guides" in row
+  );
+}
+
+async function tryGetAdminUsageStatsViaRpc(
+  supabase: SupabaseClient
+): Promise<AdminUsageStats | null> {
+  const { data, error } = await supabase.rpc("get_usage_admin_stats");
+  if (error || data == null) {
+    return null;
+  }
+  const row =
+    typeof data === "object" && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : null;
+  if (!row || !rpcHasProductSplit(row)) {
+    return null;
+  }
+  return mapAdminUsageStatsRow(row);
+}
+
+async function countExact(
+  supabase: SupabaseClient,
+  table: "stories" | "style_guides" | "credit_transactions",
+  applyFilters: (query: any) => any
+): Promise<number> {
+  const { count, error } = await applyFilters(
+    supabase.from(table).select("*", { count: "exact", head: true })
+  );
+  if (error) {
+    throw error;
+  }
+  return count ?? 0;
+}
+
 export async function getAdminUsageStatsViaSupabase(): Promise<AdminUsageStats> {
   const supabase = await getSupabaseClientForAdminOperations();
   const hasServiceRole = Boolean(getServiceRoleClient());
+
+  // Owner JWT on Vercel: one RPC round-trip. Service role has no user JWT, so the
+  // RPC would 42501 — skip it and query tables instead.
+  if (!hasServiceRole) {
+    const fromRpc = await tryGetAdminUsageStatsViaRpc(supabase);
+    if (fromRpc) {
+      return fromRpc;
+    }
+  }
+
   const users = await listUsersForMetrics(supabase);
   const countedUserIds = new Set(users.map((u) => u.id));
   const now = Date.now();
@@ -166,38 +252,69 @@ export async function getAdminUsageStatsViaSupabase(): Promise<AdminUsageStats> 
     }
   }
 
-  const [stories24h, credits24h, stories7d, credits7d, stories30d, credits30d] = await Promise.all([
-    distinctUserIdsSince(supabase, "stories", since24h),
-    distinctUserIdsSince(supabase, "credit_transactions", since24h),
-    distinctUserIdsSince(supabase, "stories", since7d),
-    distinctUserIdsSince(supabase, "credit_transactions", since7d),
-    distinctUserIdsSince(supabase, "stories", since30d),
-    distinctUserIdsSince(supabase, "credit_transactions", since30d),
+  const [
+    stories24h,
+    credits24h,
+    stories7d,
+    credits7d,
+    stories30d,
+    credits30d,
+    storyUserIds,
+    styleGuideUserIds,
+    storyUsers7dIds,
+    styleGuideUsers7dIds,
+    totalStories,
+    totalAiGenerations,
+    aiGenerations7d,
+    totalStyleGuides,
+    storiesThatUsedStyleGuide,
+    storyAiGenerations,
+    styleGuideAiGenerations,
+    storyAiGenerations7d,
+    styleGuideAiGenerations7d,
+  ] = await Promise.all([
+    distinctUserIdsSince(supabase, "stories", since24h, "updated_at"),
+    distinctUserIdsSince(supabase, "credit_transactions", since24h, "created_at"),
+    distinctUserIdsSince(supabase, "stories", since7d, "updated_at"),
+    distinctUserIdsSince(supabase, "credit_transactions", since7d, "created_at"),
+    distinctUserIdsSince(supabase, "stories", since30d, "updated_at"),
+    distinctUserIdsSince(supabase, "credit_transactions", since30d, "created_at"),
+    distinctUserIdsAll(supabase, "stories"),
+    distinctUserIdsAll(supabase, "style_guides"),
+    distinctUserIdsSince(supabase, "stories", since7d, "created_or_updated"),
+    distinctUserIdsSince(supabase, "style_guides", since7d, "created_or_updated"),
+    countExact(supabase, "stories", (query) => query),
+    countExact(supabase, "credit_transactions", (query) => query.eq("type", "debit")),
+    countExact(supabase, "credit_transactions", (query) =>
+      query.eq("type", "debit").gte("created_at", since7d)
+    ),
+    countExact(supabase, "style_guides", (query) => query),
+    countExact(supabase, "stories", (query) => query.not("style_guide_id", "is", null)),
+    countExact(supabase, "credit_transactions", (query) =>
+      query.eq("type", "debit").not("reason", "like", "style_analyze_%")
+    ),
+    countExact(supabase, "credit_transactions", (query) =>
+      query.eq("type", "debit").like("reason", "style_analyze_%")
+    ),
+    countExact(supabase, "credit_transactions", (query) =>
+      query.eq("type", "debit").not("reason", "like", "style_analyze_%").gte("created_at", since7d)
+    ),
+    countExact(supabase, "credit_transactions", (query) =>
+      query.eq("type", "debit").like("reason", "style_analyze_%").gte("created_at", since7d)
+    ),
   ]);
 
-  const { count: totalStories, error: storiesCountError } = await supabase
-    .from("stories")
-    .select("*", { count: "exact", head: true });
-  if (storiesCountError) {
-    throw storiesCountError;
-  }
-
-  const { count: totalAiGenerations, error: aiTotalError } = await supabase
-    .from("credit_transactions")
-    .select("*", { count: "exact", head: true })
-    .eq("type", "debit");
-  if (aiTotalError) {
-    throw aiTotalError;
-  }
-
-  const { count: aiGenerations7d, error: ai7dError } = await supabase
-    .from("credit_transactions")
-    .select("*", { count: "exact", head: true })
-    .eq("type", "debit")
-    .gte("created_at", since7d);
-  if (ai7dError) {
-    throw ai7dError;
-  }
+  const countedStoryUsers = new Set(
+    [...storyUserIds].filter((id) => countedUserIds.has(id))
+  );
+  const countedStyleGuideUsers = new Set(
+    [...styleGuideUserIds].filter((id) => countedUserIds.has(id))
+  );
+  const usersWithBoth = intersectSize(countedStoryUsers, countedStyleGuideUsers);
+  const usersStoriesOnly = countedStoryUsers.size - usersWithBoth;
+  const usersStyleGuidesOnly = countedStyleGuideUsers.size - usersWithBoth;
+  const usersWithNeither =
+    users.length - (usersStoriesOnly + usersStyleGuidesOnly + usersWithBoth);
 
   return {
     totalUsers: users.length,
@@ -207,9 +324,23 @@ export async function getAdminUsageStatsViaSupabase(): Promise<AdminUsageStats> 
     activeUsers7d: mergeActiveUserCounts(countedUserIds, stories7d, credits7d),
     activeUsers30d: mergeActiveUserCounts(countedUserIds, stories30d, credits30d),
     recentlyOnlineUsers,
-    totalStories: totalStories ?? 0,
-    totalAiGenerations: totalAiGenerations ?? 0,
-    aiGenerations7d: aiGenerations7d ?? 0,
+    totalStories,
+    totalAiGenerations,
+    aiGenerations7d,
+    usersWithStories: countedStoryUsers.size,
+    usersWithStyleGuides: countedStyleGuideUsers.size,
+    usersWithBoth,
+    usersStoriesOnly,
+    usersStyleGuidesOnly,
+    usersWithNeither,
+    totalStyleGuides,
+    storiesThatUsedStyleGuide,
+    storyUsers7d: mergeActiveUserCounts(countedUserIds, storyUsers7dIds),
+    styleGuideUsers7d: mergeActiveUserCounts(countedUserIds, styleGuideUsers7dIds),
+    storyAiGenerations,
+    styleGuideAiGenerations,
+    storyAiGenerations7d,
+    styleGuideAiGenerations7d,
   };
 }
 

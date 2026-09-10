@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AUTH_ROUTES, withRedirectedFrom } from "@/lib/auth/routes";
-import { getAdminUsageStats, getRecentSignups, type AdminUsageStats, type RecentSignup } from "@/lib/admin/usage-queries";
+import {
+  EMPTY_ADMIN_USAGE_STATS,
+  getAdminUsageStats,
+  getRecentSignups,
+  type AdminUsageStats,
+  type RecentSignup,
+} from "@/lib/admin/usage-queries";
 import { USAGE_ADMIN_PATH } from "@/lib/admin/paths";
 import { isUsageAdminUser, USAGE_ADMIN_ACCESS_DENIED_PATH } from "@/lib/admin/usage-access";
 import { adminMetricsLoadWarning } from "@/lib/db/connection-error";
@@ -65,18 +71,7 @@ export default async function UsageAdminPage() {
   } catch (error) {
     console.error("Failed to load admin usage stats", error);
     loadError = adminMetricsLoadWarning(error);
-    stats = {
-      totalUsers: 0,
-      newUsers7d: 0,
-      newUsers30d: 0,
-      activeUsers24h: 0,
-      activeUsers7d: 0,
-      activeUsers30d: 0,
-      recentlyOnlineUsers: 0,
-      totalStories: 0,
-      totalAiGenerations: 0,
-      aiGenerations7d: 0,
-    };
+    stats = EMPTY_ADMIN_USAGE_STATS;
     recentSignups = [];
   }
 
@@ -85,7 +80,7 @@ export default async function UsageAdminPage() {
       <div>
         <h1 className="text-2xl font-semibold text-brand-ink dark:text-brand-yellow">Usage admin</h1>
         <p className="mt-1 text-sm text-brand-ink/80 dark:text-brand-seafoam">
-          How many people use Story Teller — registrations, activity, and AI generations.
+          How many people use Story Teller — registrations, stories vs style guides, and AI generations.
         </p>
       </div>
 
@@ -128,12 +123,82 @@ export default async function UsageAdminPage() {
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-brand-ink/80 dark:text-brand-seafoam">
+          Stories vs style guides
+        </h2>
+        <p className="text-sm text-brand-ink/70 dark:text-brand-seafoam">
+          How many customers created stories, style guides, or both. Owner and test accounts are excluded
+          from user counts.
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <StatCard
+            label="Users who created a story"
+            value={stats.usersWithStories}
+            hint="Distinct customers with at least one story"
+          />
+          <StatCard
+            label="Users who created a style guide"
+            value={stats.usersWithStyleGuides}
+            hint="Distinct customers with at least one style guide"
+          />
+          <StatCard
+            label="Users who created both"
+            value={stats.usersWithBoth}
+            hint="Have at least one story and one style guide"
+          />
+          <StatCard
+            label="Stories only"
+            value={stats.usersStoriesOnly}
+            hint="Created stories, never a style guide"
+          />
+          <StatCard
+            label="Style guides only"
+            value={stats.usersStyleGuidesOnly}
+            hint="Created style guides, never a story"
+          />
+          <StatCard
+            label="Created neither"
+            value={stats.usersWithNeither}
+            hint="Registered users with no story or style guide"
+          />
+          <StatCard
+            label="Story users (7 days)"
+            value={stats.storyUsers7d}
+            hint="Created or updated a story this week"
+          />
+          <StatCard
+            label="Style guide users (7 days)"
+            value={stats.styleGuideUsers7d}
+            hint="Created or updated a style guide this week"
+          />
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-brand-ink/80 dark:text-brand-seafoam">
           Content &amp; AI
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard label="Total stories created" value={stats.totalStories} />
+          <StatCard label="Total style guides created" value={stats.totalStyleGuides} />
+          <StatCard
+            label="Stories that used a style guide"
+            value={stats.storiesThatUsedStyleGuide}
+            hint="Stories with a style guide attached"
+          />
           <StatCard label="Total AI generations" value={stats.totalAiGenerations} />
           <StatCard label="AI generations (7 days)" value={stats.aiGenerations7d} />
+          <StatCard
+            label="Story AI generations"
+            value={stats.storyAiGenerations}
+            hint="Credit debits that are not style-guide analysis"
+          />
+          <StatCard
+            label="Style guide AI generations"
+            value={stats.styleGuideAiGenerations}
+            hint="style_analyze document, URL, or text"
+          />
+          <StatCard label="Story AI (7 days)" value={stats.storyAiGenerations7d} />
+          <StatCard label="Style guide AI (7 days)" value={stats.styleGuideAiGenerations7d} />
         </div>
       </section>
 
